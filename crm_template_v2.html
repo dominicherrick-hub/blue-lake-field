@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Lake CRM — [ADDRESS]</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+
+  /* ── HEADER ── */
+  .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 17px; font-weight: 700; }
+  .header .sub { font-size: 12px; opacity: 0.78; margin-top: 3px; }
+  .header .meta { font-size: 11px; opacity: 0.7; text-align: right; line-height: 1.6; }
+
+  /* ── PIPELINE BAR ── */
+  .pipeline-bar { background: white; border-bottom: 2px solid #e2e8f0; padding: 0; display: flex; overflow: hidden; }
+  .stage-step { flex: 1; padding: 10px 8px; text-align: center; font-size: 10px; font-weight: 700; color: #94a3b8; cursor: pointer; border-right: 1px solid #e2e8f0; position: relative; transition: all .15s; user-select: none; }
+  .stage-step:last-child { border-right: none; }
+  .stage-step:hover { background: #f8fafc; color: #475569; }
+  .stage-step.active { background: #1d4ed8; color: white; }
+  .stage-step.done { background: #dcfce7; color: #166534; }
+  .stage-step .stage-icon { display: block; font-size: 14px; margin-bottom: 2px; }
+
+  /* ── LEAD BAR ── */
+  .lead-bar { border-bottom: 2px solid #f97316; padding: 8px 22px; display: flex; align-items: center; gap: 14px; }
+  .lead-bar.hot  { background: #fff7ed; }
+  .lead-bar.warm { background: #fefce8; border-color: #eab308; }
+  .lead-bar.cold { background: #f8fafc; border-color: #94a3b8; }
+  .lead-score { color: white; font-weight: 800; font-size: 13px; padding: 4px 14px; border-radius: 20px; letter-spacing: 0.03em; }
+  .score-hot  { background: #ea580c; }
+  .score-warm { background: #ca8a04; }
+  .score-cold { background: #64748b; }
+  .lead-bar .reason { font-size: 12px; color: #7c2d12; font-weight: 500; }
+  .lead-bar.warm .reason { color: #713f12; }
+  .lead-bar.cold .reason { color: #475569; }
+
+  /* ── GRID ── */
+  .container { max-width: 920px; margin: 14px auto; padding: 0 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { background: white; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .card.full { grid-column: 1 / -1; }
+  .card.third { grid-column: span 1; }
+  .card h2 { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
+
+  /* ── KV GRIDS ── */
+  .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+  .kv-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .kv label { display: block; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1px; }
+  .kv span { font-size: 13px; font-weight: 600; color: #1e293b; }
+  .kv span.dim { font-weight: 400; color: #64748b; }
+  .kv span.hot { color: #dc2626; }
+  .kv span.ok { color: #16a34a; }
+
+  /* ── BADGES ── */
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 9px; font-size: 11px; font-weight: 600; }
+  .badge-green  { background: #d1fae5; color: #065f46; }
+  .badge-red    { background: #fee2e2; color: #991b1b; }
+  .badge-blue   { background: #dbeafe; color: #1e40af; }
+  .badge-orange { background: #fed7aa; color: #9a3412; }
+  .badge-gray   { background: #f1f5f9; color: #475569; }
+
+  .level-badge { display: inline-block; color: white; padding: 4px 14px; border-radius: 14px; font-weight: 800; font-size: 14px; margin-right: 8px; }
+  .level-4 { background: #dc2626; }
+  .level-3 { background: #f97316; }
+  .level-2 { background: #eab308; }
+  .level-1 { background: #22c55e; }
+
+  /* ── VISUAL BOXES ── */
+  .visual-box { border-radius: 7px; padding: 9px 12px; font-size: 12px; line-height: 1.5; margin-top: 8px; }
+  .visual-warn { background: #fffbeb; border: 1px solid #fde68a; color: #713f12; }
+  .visual-red  { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+  .visual-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .visual-ok   { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+  .visual-gray { background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; }
+
+  /* ── CHECKLIST ── */
+  .check-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f8fafc; font-size: 12px; cursor: pointer; }
+  .check-row:last-child { border-bottom: none; }
+  .cbox { width: 15px; height: 15px; border: 2px solid #cbd5e1; border-radius: 3px; flex-shrink: 0; margin-top: 1px; transition: all .1s; }
+  .check-row.checked .cbox { background: #16a34a; border-color: #16a34a; }
+  .check-row.checked .check-label { text-decoration: line-through; color: #94a3b8; }
+  .check-label { font-weight: 600; width: 140px; flex-shrink: 0; }
+  .check-note { color: #64748b; }
+
+  /* ── PERMIT ROWS ── */
+  .permit-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 9px; background: #f8fafc; border-radius: 6px; font-size: 12px; margin-bottom: 5px; }
+  .permit-none { font-size: 12px; color: #dc2626; font-weight: 700; margin-top: 4px; }
+
+  /* ── UPSELL TAGS ── */
+  .upsell { display: flex; flex-wrap: wrap; gap: 6px; }
+  .utag { padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 600; border: 1px solid; }
+  .utag.roof    { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  .utag.house   { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+  .utag.drive   { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+  .utag.windows { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
+  .utag.gutters { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+  .utag.screen  { background: #fefce8; color: #854d0e; border-color: #fef08a; }
+
+  /* ── TIMELINE ── */
+  .timeline .tl-row { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; font-size: 12px; border-bottom: 1px solid #f8fafc; }
+  .timeline .tl-row:last-child { border-bottom: none; }
+  .tl-dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; flex-shrink: 0; margin-top: 3px; }
+  .tl-dot.red   { background: #dc2626; }
+  .tl-dot.green { background: #16a34a; }
+  .tl-dot.gray  { background: #94a3b8; }
+  .tl-date { width: 90px; flex-shrink: 0; color: #64748b; }
+  .tl-event { color: #1e293b; }
+
+  /* ── CONTACT LOG ── */
+  .log-row { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f8fafc; font-size: 12px; align-items: flex-start; }
+  .log-row:last-child { border-bottom: none; }
+  .log-type { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+  .log-type.mail   { background: #dbeafe; }
+  .log-type.call   { background: #dcfce7; }
+  .log-type.text   { background: #fef9c3; }
+  .log-type.visit  { background: #fce7f3; }
+  .log-type.quote  { background: #ede9fe; }
+  .log-type.plan   { background: #d1fae5; }
+  .log-date { width: 80px; color: #64748b; flex-shrink: 0; }
+  .log-body { flex: 1; color: #374151; }
+  .log-body .log-action { font-weight: 700; color: #1e293b; }
+  .log-body .log-note { color: #64748b; }
+  .log-empty { font-size: 12px; color: #94a3b8; font-style: italic; padding: 8px 0; }
+
+  /* ── MAIL TRACKER ── */
+  .mail-track { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .mail-slot { border: 1.5px solid #e2e8f0; border-radius: 7px; padding: 8px 10px; font-size: 11px; }
+  .mail-slot.sent { border-color: #bbf7d0; background: #f0fdf4; }
+  .mail-slot.pending { border-color: #fed7aa; background: #fff7ed; }
+  .mail-slot .ms-label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+  .mail-slot .ms-status { font-weight: 700; color: #1e293b; }
+  .mail-slot.sent .ms-status { color: #166534; }
+  .mail-slot.pending .ms-status { color: #9a3412; }
+  .mail-slot .ms-date { color: #64748b; margin-top: 2px; }
+
+  /* ── ANNUAL PLAN STATUS ── */
+  .plan-status { border-radius: 8px; padding: 10px 14px; }
+  .plan-status.none    { background: #f8fafc; border: 1.5px solid #e2e8f0; }
+  .plan-status.offered { background: #fffbeb; border: 1.5px solid #fde68a; }
+  .plan-status.active  { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+  .plan-status .ps-tier { font-size: 15px; font-weight: 800; color: #1e293b; }
+  .plan-status.active .ps-tier { color: #166534; }
+  .plan-status .ps-detail { font-size: 11px; color: #64748b; margin-top: 3px; }
+  .plan-status.active .ps-detail { color: #16a34a; }
+
+  /* ── LINKS ── */
+  .links { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 10px; }
+  .link-btn { display: inline-block; text-decoration: none; padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 600; color: white; }
+  .link-btn.blue   { background: #1e40af; }
+  .link-btn.slate  { background: #475569; }
+  .link-btn.green  { background: #15803d; }
+  .link-btn.orange { background: #ea580c; }
+  .link-btn.red    { background: #dc2626; }
+
+  /* ── ACTION BOX ── */
+  .action-box { background: #fafafa; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 12px; }
+  .action-box.primary { border-color: #2563eb; background: #eff6ff; }
+  .action-box .action-title { font-weight: 700; color: #1e293b; margin-bottom: 4px; font-size: 13px; }
+  .action-box.primary .action-title { color: #1d4ed8; }
+  .action-box .action-note { color: #475569; line-height: 1.5; }
+
+  /* ── NOTES ── */
+  .notes-area { width: 100%; min-height: 60px; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; font-size: 12px; font-family: inherit; color: #475569; resize: vertical; background: #fafafa; }
+
+  /* ── REFERRAL TRACKER ── */
+  .ref-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 12px; border-bottom: 1px solid #f8fafc; }
+  .ref-row:last-child { border-bottom: none; }
+  .ref-addr { font-weight: 600; flex: 1; }
+  .ref-status { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+
+  /* ── CLUSTER INTEL ── */
+  .cluster-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 12px; border-bottom: 1px solid #f8fafc; }
+  .cluster-row:last-child { border-bottom: none; }
+  .cluster-addr { font-weight: 600; width: 160px; flex-shrink: 0; }
+  .cluster-status { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; flex-shrink: 0; }
+  .cs-lead { background: #fef2f2; color: #991b1b; }
+  .cs-customer { background: #d1fae5; color: #065f46; }
+  .cs-mailed { background: #dbeafe; color: #1e40af; }
+  .cs-none { background: #f1f5f9; color: #64748b; }
+  .cluster-note { font-size: 11px; color: #64748b; flex: 1; }
+
+  /* ── REVIEW STATUS ── */
+  .review-status { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 7px; font-size: 12px; }
+  .review-status.pending { background: #fff7ed; border: 1px solid #fed7aa; }
+  .review-status.sent    { background: #fefce8; border: 1px solid #fde68a; }
+  .review-status.received { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .review-status.na { background: #f8fafc; border: 1px solid #e2e8f0; }
+  .review-status .rs-icon { font-size: 16px; }
+  .review-status .rs-text { font-weight: 600; color: #1e293b; }
+  .review-status .rs-detail { font-size: 11px; color: #64748b; }
+
+  @media print { body { background: white; } }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     HEADER — EDIT: address, owner, details
+════════════════════════════════════════ -->
+<div class="header">
+  <div>
+    <h1>🏠 [ADDRESS], Eustis FL [ZIP]</h1>
+    <div class="sub">[OWNER NAME] &nbsp;·&nbsp;
+      <span class="badge badge-green">Owner-Occupied</span> &nbsp;·&nbsp;
+      [STORIES]-story · [BD/BA] · Built [YEAR] &nbsp;·&nbsp; [SUBDIVISION]
+    </div>
+  </div>
+  <div class="meta">Blue Lake CRM &nbsp;·&nbsp; Created: [DATE]<br><span style="opacity:0.6">AltKey [ALTKEY]</span></div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PIPELINE STAGE BAR — click to update
+════════════════════════════════════════ -->
+<div class="pipeline-bar">
+  <div class="stage-step active" onclick="setStage(0)">
+    <span class="stage-icon">🔍</span>IDENTIFIED
+  </div>
+  <div class="stage-step" onclick="setStage(1)">
+    <span class="stage-icon">📬</span>MAILED
+  </div>
+  <div class="stage-step" onclick="setStage(2)">
+    <span class="stage-icon">📞</span>CONTACTED
+  </div>
+  <div class="stage-step" onclick="setStage(3)">
+    <span class="stage-icon">💰</span>QUOTED
+  </div>
+  <div class="stage-step" onclick="setStage(4)">
+    <span class="stage-icon">✅</span>JOB DONE
+  </div>
+  <div class="stage-step" onclick="setStage(5)">
+    <span class="stage-icon">🔄</span>ON PLAN
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     LEAD BAR — EDIT: level, reason
+════════════════════════════════════════ -->
+<div class="lead-bar hot">
+  <span class="level-badge level-4">LEVEL 4</span>
+  <span class="lead-score score-hot">🔥 HOT LEAD</span>
+  <span class="reason">[REASON — e.g. 23-yr original roof · dark staining visible · owner-occupied · no re-roof permit]</span>
+</div>
+
+<div class="container">
+
+  <!-- ══ OWNER & CONTACT ══ -->
+  <div class="card">
+    <h2>Owner &amp; Contact</h2>
+    <div class="kv-grid">
+      <div class="kv"><label>Owner Name</label><span>[OWNER NAME]</span></div>
+      <div class="kv"><label>Occupancy</label><span class="ok">Owner-Occupied ✓</span></div>
+      <div class="kv"><label>Mailing Address</label><span>[ADDRESS]<br>[CITY, STATE ZIP]</span></div>
+      <div class="kv"><label>Homestead</label><span class="ok">Yes — confirmed</span></div>
+      <div class="kv"><label>Phone</label><span class="dim">— lookup needed</span></div>
+      <div class="kv"><label>Email</label><span class="dim">— lookup needed</span></div>
+    </div>
+    <div class="visual-info" style="margin-top:10px; font-size:11px;">[Add note about contact type — owner-occupied, rental, absentee owner, etc.]</div>
+  </div>
+
+  <!-- ══ PROPERTY SIZING ══ -->
+  <div class="card">
+    <h2>Property Sizing</h2>
+    <div class="kv-grid three">
+      <div class="kv"><label>Living Area</label><span>[X,XXX sq ft]</span></div>
+      <div class="kv"><label>Market Value</label><span>$[XXX,XXX]</span></div>
+      <div class="kv"><label>Stories</label><span>[1 or 2]-story</span></div>
+      <div class="kv"><label>Roof Footprint</label><span>~[X,XXX] sq ft</span></div>
+      <div class="kv"><label>Roof Surface</label><span>~[X,XXX] sq ft</span></div>
+      <div class="kv"><label>Lot Size</label><span>[X.XX] acres</span></div>
+      <div class="kv"><label>Wall Type</label><span>[Stucco / Block / etc.]</span></div>
+      <div class="kv"><label>Pool</label><span>[Yes/No] [w/ screen?]</span></div>
+      <div class="kv"><label>Garage</label><span>[XXX] sq ft</span></div>
+    </div>
+  </div>
+
+  <!-- ══ ROOF INTELLIGENCE ══ -->
+  <div class="card full">
+    <h2>Roof Intelligence</h2>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+      <div>
+        <div class="kv-grid" style="margin-bottom:10px;">
+          <div class="kv"><label>Year Built</label><span class="hot">[YEAR]</span></div>
+          <div class="kv"><label>Roof Age</label><span class="hot">[XX] years</span></div>
+          <div class="kv"><label>Re-Roof Permit</label><span class="hot">None found</span></div>
+          <div class="kv"><label>Level Score</label><span><span class="level-badge level-4" style="font-size:11px;padding:2px 10px;">Level 4</span></span></div>
+        </div>
+        <div class="permit-none">⚠ No re-roof permit found — assumed original shingles.</div>
+        <div class="visual-red" style="margin-top:8px;font-size:11px;">Asphalt shingles: 20–25 yr lifespan. This roof is at or past that window.</div>
+      </div>
+      <div>
+        <div class="kv" style="margin-bottom:8px;"><label>2025 Aerial (GIS)</label><span class="hot">[Finding — e.g. Dark staining visible]</span></div>
+        <div class="visual-warn" style="font-size:11px;">
+          <strong>Visual finding:</strong> [Describe what you saw in GIS aerial — staining level, location on roof, comparison to neighbors.]
+        </div>
+        <div class="kv" style="margin-top:10px;"><label>EagleView Confirm</label><span class="dim">[Pulled? Date? Finding?]</span></div>
+      </div>
+      <div>
+        <div class="kv" style="margin-bottom:8px;"><label>Jurisdiction</label><span>[City of Eustis / Lake County]</span></div>
+        <div class="kv" style="margin-bottom:8px;"><label>Permit Portal</label><span><a href="https://app.govwell.com/eustis" style="color:#1e40af;font-size:12px;">GovWell (Eustis)</a></span></div>
+        <div class="kv"><label>Permit Notes</label><span class="dim">[Any relevant permits found?]</span></div>
+        <div class="visual-info" style="margin-top:10px;font-size:11px;">Always verify permit status before first contact — it's your strongest opener if no permit exists.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SERVICE OPPORTUNITIES ══ -->
+  <div class="card">
+    <h2>Service Opportunities</h2>
+    <div class="upsell">
+      <span class="utag roof">🏠 Roof Soft Wash (Primary)</span>
+      <span class="utag house">🧹 House Exterior Wash</span>
+      <span class="utag drive">🚗 Driveway / Concrete</span>
+      <span class="utag screen">🪟 Screen Enclosure</span>
+      <span class="utag gutters">🍃 Gutter Flush</span>
+    </div>
+    <hr style="border:none;border-top:1px solid #f1f5f9;margin:12px 0;">
+    <div class="kv-grid">
+      <div class="kv"><label>Est. Roof Wash</label><span>~$[XXX–XXX]</span></div>
+      <div class="kv"><label>Est. House Wash</label><span>~$[XXX–XXX]</span></div>
+      <div class="kv"><label>Est. Driveway</label><span>~$[XXX–XXX]</span></div>
+      <div class="kv"><label>Bundle Potential</label><span class="hot">~$[XXX–XXX]+</span></div>
+    </div>
+    <div class="visual-warn" style="margin-top:10px;font-size:11px;">[Any sizing notes, access flags, pool concerns, etc.]</div>
+  </div>
+
+  <!-- ══ ON-SITE CHECKLIST ══ -->
+  <div class="card">
+    <h2>On-Site Verification Checklist</h2>
+    <div class="check-row" onclick="this.classList.toggle('checked')"><div class="cbox"></div><div class="check-label">Algae staining confirmed?</div><div class="check-note">Look for black streaks on N/W faces</div></div>
+    <div class="check-row" onclick="this.classList.toggle('checked')"><div class="cbox"></div><div class="check-label">Granule loss visible?</div><div class="check-note">Check gutters, downspouts, driveway</div></div>
+    <div class="check-row" onclick="this.classList.toggle('checked')"><div class="cbox"></div><div class="check-label">Shingle curling/cupping?</div><div class="check-note">Walk perimeter, check ridge</div></div>
+    <div class="check-row" onclick="this.classList.toggle('checked')"><div class="cbox"></div><div class="check-label">Fascia &amp; soffit condition</div><div class="check-note">Algae creep, staining near roofline</div></div>
+    <div class="check-row" onclick="this.classList.toggle('checked')"><div class="cbox"></div><div class="check-label">Driveway type &amp; condition</div><div class="check-note">Concrete vs. pavers; oil stains?</div></div>
+    <div class="check-row" onclick="this.classList.toggle('checked')"><div class="cbox"></div><div class="check-label">House exterior staining</div><div class="check-note">Stucco — algae near roofline?</div></div>
+    <div class="check-row" onclick="this.classList.toggle('checked')"><div class="cbox"></div><div class="check-label">Pool / screen enclosure?</div><div class="check-note">Condition, staining, additional job?</div></div>
+    <div class="check-row" onclick="this.classList.toggle('checked')"><div class="cbox"></div><div class="check-label">HOA signage visible?</div><div class="check-note">Check for compliance notices</div></div>
+  </div>
+
+  <!-- ══ DIRECT MAIL TRACKER ══ -->
+  <div class="card">
+    <h2>Direct Mail Tracker</h2>
+    <div class="mail-track">
+      <div class="mail-slot pending">
+        <div class="ms-label">Wave 1</div>
+        <div class="ms-status">Not Sent</div>
+        <div class="ms-date">Planned: [DATE]</div>
+      </div>
+      <div class="mail-slot">
+        <div class="ms-label">Wave 2</div>
+        <div class="ms-status" style="color:#94a3b8;">—</div>
+        <div class="ms-date" style="color:#cbd5e1;">30 days after W1</div>
+      </div>
+      <div class="mail-slot">
+        <div class="ms-label">Wave 3</div>
+        <div class="ms-status" style="color:#94a3b8;">—</div>
+        <div class="ms-date" style="color:#cbd5e1;">60 days after W1</div>
+      </div>
+    </div>
+    <div class="visual-info" style="margin-top:10px;font-size:11px;">
+      Research shows 3 touches are needed before most homeowners respond. Send W1, follow up W2 with different angle (e.g., neighbors' results), W3 with limited offer.
+    </div>
+    <div style="margin-top:10px;">
+      <label style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;">Mail Notes</label>
+      <textarea class="notes-area" style="min-height:40px;" placeholder="e.g. Used aerial photo postcard. No response after W1."></textarea>
+    </div>
+  </div>
+
+  <!-- ══ ANNUAL PLAN STATUS ══ -->
+  <div class="card">
+    <h2>Annual Maintenance Plan</h2>
+    <div class="plan-status none" id="planStatus">
+      <div class="ps-tier">Not Offered Yet</div>
+      <div class="ps-detail">Offer on-site after first job, or include in follow-up email.</div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+      <button onclick="setPlan('none','Not Offered Yet','Offer on-site after first job.')" style="font-size:11px;padding:4px 10px;border:1.5px solid #e2e8f0;border-radius:6px;background:#f8fafc;cursor:pointer;font-weight:600;">Not Offered</button>
+      <button onclick="setPlan('offered','Offered — Essential ($499/yr)','Pitched on-site. Awaiting decision.')" style="font-size:11px;padding:4px 10px;border:1.5px solid #fde68a;border-radius:6px;background:#fefce8;cursor:pointer;font-weight:600;">Offered</button>
+      <button onclick="setPlan('active','✅ Active — Complete Plan ($749/yr)','Enrolled. Renewal due: [DATE]')" style="font-size:11px;padding:4px 10px;border:1.5px solid #bbf7d0;border-radius:6px;background:#f0fdf4;cursor:pointer;font-weight:600;color:#166534;">Active ✓</button>
+    </div>
+    <div style="margin-top:10px;">
+      <label style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;">Plan Notes</label>
+      <textarea class="notes-area" style="min-height:40px;" placeholder="e.g. Interested in Complete plan. Said they'd think about it. Follow up after job."></textarea>
+    </div>
+  </div>
+
+  <!-- ══ GOOGLE REVIEW STATUS ══ -->
+  <div class="card">
+    <h2>Google Review Request</h2>
+    <div class="review-status na" id="reviewStatus">
+      <span class="rs-icon">⭕</span>
+      <div>
+        <div class="rs-text">Not Yet — Job Pending</div>
+        <div class="rs-detail">Request review within 2 hours of completing job.</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+      <button onclick="setReview('na','⭕','Not Yet — Job Pending','Request review within 2 hours of job.')" style="font-size:11px;padding:4px 10px;border:1.5px solid #e2e8f0;border-radius:6px;background:#f8fafc;cursor:pointer;font-weight:600;">Not Yet</button>
+      <button onclick="setReview('sent','📨','Review Request Sent','Text sent with GBP link.')" style="font-size:11px;padding:4px 10px;border:1.5px solid #fde68a;border-radius:6px;background:#fefce8;cursor:pointer;font-weight:600;">Sent</button>
+      <button onclick="setReview('received','⭐','5-Star Review Received!','Posted on Google.')" style="font-size:11px;padding:4px 10px;border:1.5px solid #bbf7d0;border-radius:6px;background:#f0fdf4;cursor:pointer;font-weight:600;color:#166534;">Received ⭐</button>
+    </div>
+  </div>
+
+  <!-- ══ REFERRAL TRACKER ══ -->
+  <div class="card">
+    <h2>Referrals From This Customer</h2>
+    <div class="ref-row">
+      <div class="ref-addr" style="color:#94a3b8;">— No referrals yet —</div>
+    </div>
+    <div style="margin-top:10px;">
+      <textarea class="notes-area" style="min-height:40px;" placeholder="Add referred addresses here (e.g. neighbor at 363 Blue Branch — mentioned their roof looks bad too)"></textarea>
+    </div>
+    <div class="visual-info" style="margin-top:8px;font-size:11px;">Ask for a referral immediately after the annual plan pitch. Reward: $50 off their renewal + $50 off the new customer's first job.</div>
+  </div>
+
+  <!-- ══ NEIGHBORHOOD CLUSTER INTEL ══ -->
+  <div class="card full">
+    <h2>Neighborhood Cluster — Nearby Leads &amp; Customers</h2>
+    <div style="font-size:11px;color:#64748b;margin-bottom:8px;">Track the status of nearby properties so you can cluster jobs and maximize time in this neighborhood.</div>
+    <!-- EDIT: populate from your KICK scan of the same neighborhood -->
+    <div class="cluster-row">
+      <div class="cluster-addr">[Nearby address 1]</div>
+      <span class="cluster-status cs-lead">Hot Lead</span>
+      <div class="cluster-note">[e.g. Dark roof, 19-yr, no permit — not yet contacted]</div>
+    </div>
+    <div class="cluster-row">
+      <div class="cluster-addr">[Nearby address 2]</div>
+      <span class="cluster-status cs-mailed">Mailed W1</span>
+      <div class="cluster-note">[e.g. Postcard sent 6/10. Waiting for response.]</div>
+    </div>
+    <div class="cluster-row">
+      <div class="cluster-addr">[Nearby address 3]</div>
+      <span class="cluster-status cs-customer">Customer ✓</span>
+      <div class="cluster-note">[e.g. Job completed 5/28. On Complete annual plan.]</div>
+    </div>
+    <div class="cluster-row">
+      <div class="cluster-addr">[Nearby address 4]</div>
+      <span class="cluster-status cs-none">Not Scanned</span>
+      <div class="cluster-note">[Scan when in area]</div>
+    </div>
+    <div class="visual-ok" style="margin-top:10px;font-size:11px;">When booking this job, check cluster for other active leads in the area — try to stack 2+ jobs on the same street in the same day to minimize drive time.</div>
+  </div>
+
+  <!-- ══ CONTACT LOG ══ -->
+  <div class="card full">
+    <h2>Contact Log</h2>
+    <div id="contactLog">
+      <div class="log-empty">No contacts logged yet. Add entries below when you reach out.</div>
+    </div>
+    <div style="display:grid;grid-template-columns:100px 1fr auto;gap:8px;margin-top:12px;align-items:start;">
+      <select id="logType" style="font-size:12px;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:6px;background:white;">
+        <option value="mail">📬 Mail</option>
+        <option value="call">📞 Call</option>
+        <option value="text">💬 Text</option>
+        <option value="visit">🚪 Visit</option>
+        <option value="quote">💰 Quote</option>
+        <option value="plan">🔄 Plan</option>
+      </select>
+      <input id="logNote" type="text" placeholder="What happened? (e.g. Wave 1 postcard sent. Roof alert angle.)" style="font-size:12px;padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:6px;width:100%;font-family:inherit;">
+      <button onclick="addLog()" style="background:#1d4ed8;color:white;border:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Log</button>
+    </div>
+  </div>
+
+  <!-- ══ OWNERSHIP TIMELINE ══ -->
+  <div class="card">
+    <h2>Ownership &amp; Sales History</h2>
+    <div class="timeline">
+      <!-- EDIT: populate from Property Appraiser -->
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-date">[YEAR]</div><div class="tl-event">Home built — original roof installed</div></div>
+      <div class="tl-row"><div class="tl-dot"></div><div class="tl-date">[DATE]</div><div class="tl-event">Sold to [NAME] — $[PRICE]</div></div>
+      <div class="tl-row"><div class="tl-dot red"></div><div class="tl-date">[TODAY]</div><div class="tl-event"><strong>Lead identified</strong> — [how found]</div></div>
+    </div>
+    <div class="visual-info" style="margin-top:10px;font-size:11px;">[Add ownership context — long-term owners, recent buyer, investor, etc. This affects your pitch angle.]</div>
+  </div>
+
+  <!-- ══ NEXT ACTION ══ -->
+  <div class="card">
+    <h2>Next Action</h2>
+    <div class="action-box primary">
+      <div class="action-title">📬 Primary: Direct Mail — Wave 1</div>
+      <div class="action-note">Send to: [OWNER NAME], [ADDRESS], Eustis FL [ZIP].<br>Use the Roof Alert postcard. Personalize body text with roof age and observation. Include $50 neighbor discount code.</div>
+    </div>
+    <div class="action-box">
+      <div class="action-title">📞 Backup: Phone / Text (if mail gets no response)</div>
+      <div class="action-note">Wait 14 days after Wave 1. If no response, try a brief text or call. Keep it warm — "We sent a postcard recently about your roof..."</div>
+    </div>
+    <div style="margin-top:10px;">
+      <label style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;">Follow-Up Date</label>
+      <input type="date" style="font-size:13px;padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:6px;width:100%;font-family:inherit;">
+    </div>
+  </div>
+
+  <!-- ══ NOTES ══ -->
+  <div class="card full">
+    <h2>CRM Notes &amp; Quick Links</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">
+      <div class="kv-grid">
+        <div class="kv"><label>Lead Source</label><span>[GIS Aerial Scan / Referral / etc.]</span></div>
+        <div class="kv"><label>Neighborhood</label><span>[SUBDIVISION]</span></div>
+        <div class="kv"><label>Assigned To</label><span>Chris</span></div>
+        <div class="kv"><label>Created</label><span>[DATE]</span></div>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">General Notes</label>
+        <textarea class="notes-area" placeholder="Add freeform notes here..."></textarea>
+      </div>
+    </div>
+    <div class="links">
+      <!-- EDIT: Update AltKey and address in URLs -->
+      <a class="link-btn blue" href="https://lakecopropappr.com/property-details.aspx?AltKey=[ALTKEY]" target="_blank">Property Appraiser</a>
+      <a class="link-btn slate" href="https://gis.lakecountyfl.gov/gisweb/EagleView?address=[ADDRESS_URL_ENCODED]" target="_blank">EagleView</a>
+      <a class="link-btn slate" href="https://app.govwell.com/eustis" target="_blank">GovWell Permits</a>
+      <a class="link-btn green" href="https://www.google.com/maps/place/[ADDRESS_URL_ENCODED]" target="_blank">Google Maps</a>
+      <a class="link-btn orange" href="https://gis.lakecountyfl.gov/gisweb/" target="_blank">GIS Viewer</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── Pipeline Stage ──
+  const stages = document.querySelectorAll('.stage-step');
+  let currentStage = 0;
+  function setStage(idx) {
+    currentStage = idx;
+    stages.forEach((s, i) => {
+      s.classList.remove('active','done');
+      if (i < idx) s.classList.add('done');
+      if (i === idx) s.classList.add('active');
+    });
+  }
+
+  // ── Plan Status ──
+  function setPlan(type, tier, detail) {
+    const el = document.getElementById('planStatus');
+    el.className = 'plan-status ' + type;
+    el.querySelector('.ps-tier').textContent = tier;
+    el.querySelector('.ps-detail').textContent = detail;
+  }
+
+  // ── Review Status ──
+  function setReview(type, icon, text, detail) {
+    const el = document.getElementById('reviewStatus');
+    el.className = 'review-status ' + type;
+    el.querySelector('.rs-icon').textContent = icon;
+    el.querySelector('.rs-text').textContent = text;
+    el.querySelector('.rs-detail').textContent = detail;
+  }
+
+  // ── Contact Log ──
+  function addLog() {
+    const typeEl = document.getElementById('logType');
+    const noteEl = document.getElementById('logNote');
+    const note = noteEl.value.trim();
+    if (!note) return;
+
+    const typeMap = { mail:'📬', call:'📞', text:'💬', visit:'🚪', quote:'💰', plan:'🔄' };
+    const typeClass = typeEl.value;
+    const icon = typeMap[typeClass] || '•';
+    const now = new Date();
+    const dateStr = (now.getMonth()+1)+'/'+now.getDate()+'/'+now.getFullYear().toString().slice(-2);
+
+    const log = document.getElementById('contactLog');
+    const empty = log.querySelector('.log-empty');
+    if (empty) empty.remove();
+
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    row.innerHTML = `
+      <div class="log-type ${typeClass}">${icon}</div>
+      <div class="log-date">${dateStr}</div>
+      <div class="log-body">
+        <span class="log-action">${typeClass.charAt(0).toUpperCase()+typeClass.slice(1)}</span>
+        <span class="log-note"> — ${note}</span>
+      </div>`;
+    log.appendChild(row);
+    noteEl.value = '';
+  }
+
+  document.getElementById('logNote').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') addLog();
+  });
+</script>
+</body>
+</html>
