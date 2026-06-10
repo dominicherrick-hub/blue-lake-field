@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Lake Services — GBP Optimization Checklist</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+
+  .header { background: linear-gradient(135deg, #166534, #16a34a); color: white; padding: 16px 28px; }
+  .header h1 { font-size: 20px; font-weight: 800; }
+  .header .sub { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+  .header .meta { font-size: 11px; opacity: 0.65; margin-top: 6px; }
+
+  .progress-bar-wrap { background: #dcfce7; border-bottom: 2px solid #16a34a; padding: 10px 28px; display: flex; align-items: center; gap: 14px; }
+  .progress-label { font-size: 12px; font-weight: 700; color: #166534; }
+  .progress-track { flex: 1; height: 10px; background: #bbf7d0; border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #16a34a; border-radius: 10px; transition: width .3s; }
+  .progress-count { font-size: 12px; font-weight: 700; color: #166534; min-width: 70px; text-align: right; }
+
+  .container { max-width: 860px; margin: 20px auto; padding: 0 16px 40px; }
+
+  .phase { margin-bottom: 28px; }
+  .phase-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .phase-icon { font-size: 22px; }
+  .phase-title { font-size: 16px; font-weight: 800; color: #1e293b; }
+  .phase-desc { font-size: 12px; color: #64748b; margin-top: 1px; }
+  .phase-badge { margin-left: auto; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+  .badge-do-first { background: #fef2f2; color: #991b1b; }
+  .badge-weekly { background: #eff6ff; color: #1d4ed8; }
+  .badge-ongoing { background: #f0fdf4; color: #166534; }
+  .badge-advanced { background: #faf5ff; color: #6b21a8; }
+
+  .checklist { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+
+  .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background .1s; }
+  .check-item:last-child { border-bottom: none; }
+  .check-item:hover { background: #f8fafc; }
+  .check-item.done { background: #f0fdf4; }
+  .check-item.done .item-title { color: #64748b; text-decoration: line-through; }
+
+  .checkbox { width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 5px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .check-item.done .checkbox { background: #16a34a; border-color: #16a34a; }
+  .checkbox::after { content: ''; display: none; }
+  .check-item.done .checkbox::after { display: block; width: 5px; height: 9px; border: 2px solid white; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px, -1px); }
+
+  .item-body { flex: 1; }
+  .item-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
+  .item-detail { font-size: 11.5px; color: #64748b; line-height: 1.6; }
+  .item-detail strong { color: #374151; }
+  .item-detail a { color: #1d4ed8; }
+  .item-detail .tag { display: inline-block; background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; margin: 2px 2px 0 0; }
+  .item-detail .tag.kw { background: #eff6ff; color: #1d4ed8; }
+  .item-detail .tag.warn { background: #fef3c7; color: #92400e; }
+  .item-detail .tag.hot { background: #fef2f2; color: #991b1b; }
+
+  .impact-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .impact-high { background: #dc2626; }
+  .impact-med { background: #f97316; }
+  .impact-low { background: #94a3b8; }
+
+  .impact-legend { display: flex; gap: 16px; align-items: center; padding: 8px 16px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; }
+  .impact-legend .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .tip-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; font-size: 12px; color: #1e40af; line-height: 1.6; }
+  .tip-box strong { display: block; font-size: 13px; margin-bottom: 4px; color: #1e3a8a; }
+
+  .review-template { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #374151; line-height: 1.7; margin-top: 8px; font-style: italic; }
+  .review-template .rt-label { font-style: normal; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+
+  .kw-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  .kw-table th { background: #f1f5f9; padding: 6px 10px; text-align: left; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
+  .kw-table td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; }
+  .kw-table tr:last-child td { border-bottom: none; }
+  .vol-bar { height: 6px; background: #e2e8f0; border-radius: 3px; }
+  .vol-fill { height: 100%; border-radius: 3px; background: #1d4ed8; }
+
+  .print-btn { position: fixed; top: 16px; right: 16px; background: #166534; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  @media print { .print-btn { display: none; } }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨 Print</button>
+
+<div class="header">
+  <h1>Google Business Profile — Optimization Checklist</h1>
+  <div class="sub">Blue Lake Services · Eustis, FL · Lake County Exterior Cleaning</div>
+  <div class="meta">Complete these in order. High-impact items first. Takes ~4–6 hours total.</div>
+</div>
+
+<div class="progress-bar-wrap">
+  <span class="progress-label">Your Progress</span>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <span class="progress-count" id="progressCount">0 / 28 done</span>
+</div>
+
+<div class="container">
+
+  <!-- ══ PHASE 1: PROFILE FOUNDATION ══ -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-icon">🏗</div>
+      <div>
+        <div class="phase-title">Phase 1 — Profile Foundation</div>
+        <div class="phase-desc">Get the basics right. These directly affect whether Google shows you at all.</div>
+      </div>
+      <span class="phase-badge badge-do-first">Do First</span>
+    </div>
+
+    <div class="tip-box">
+      <strong>Why this matters</strong>
+      Google's local "3-pack" (the 3 map results that appear above organic search) captures 44% of all clicks for local service searches. A complete, verified GBP is the #1 factor in getting there — and most local competitors in Eustis have incomplete profiles.
+    </div>
+
+    <div class="checklist">
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Claim and verify your GBP listing</div>
+          <div class="item-detail">Go to <a href="https://business.google.com" target="_blank">business.google.com</a>. Search "Blue Lake Services Eustis." If found, claim it. If not, create it. Verify via postcard (5–7 days) or phone/email if offered. <span class="tag warn">Required before anything else works</span></div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Set exact business name: "Blue Lake Services"</div>
+          <div class="item-detail">Use your real business name only. Do NOT keyword-stuff (e.g., "Blue Lake Pressure Washing Eustis FL") — Google will suspend you for this. Natural name, consistent with all other listings.</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Set primary category: "Pressure Washing Service"</div>
+          <div class="item-detail">This is the single most important ranking signal. Secondary categories to add: <span class="tag">Gutter Cleaning Service</span> <span class="tag">House Cleaning Service</span> <span class="tag">Roof Cleaning Service</span></div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Configure as a Service Area Business (no storefront)</div>
+          <div class="item-detail">Since you go to customers, hide your home address and set a service area. Add these cities/areas: <span class="tag kw">Eustis</span> <span class="tag kw">Mount Dora</span> <span class="tag kw">Tavares</span> <span class="tag kw">Leesburg</span> <span class="tag kw">Clermont</span> <span class="tag kw">Apopka</span> <span class="tag kw">Lake County</span>. Stay within ~30 miles of where you actually work.</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Write your business description (750 chars max)</div>
+          <div class="item-detail">
+            Use this template (edit to match your voice):<br><br>
+            <div class="review-template">
+              <div class="rt-label">Suggested Description</div>
+              Blue Lake Services provides professional exterior cleaning for homeowners throughout Lake County, FL. We specialize in roof soft washing, house washing, driveway cleaning, and screen enclosure cleaning — using safe, low-pressure techniques that protect your home's surfaces and landscaping. Serving Eustis, Mount Dora, Tavares, Leesburg, and surrounding communities. Fully insured. Free quotes. Call or book online today.
+            </div>
+            <span class="tag kw">roof soft washing</span> <span class="tag kw">pressure washing Eustis FL</span> <span class="tag kw">exterior cleaning Lake County</span> are your target keywords — weave them in naturally.
+          </div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Add phone number and website URL</div>
+          <div class="item-detail">Use the same phone number everywhere (GBP, website, Nextdoor, Yelp). Inconsistent NAP (Name/Address/Phone) across directories hurts your local ranking. If you don't have a website yet, use your booking link or Facebook page URL temporarily.</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Set accurate hours</div>
+          <div class="item-detail">Set your real availability. If you're flexible, set broad hours (e.g., Mon–Sat 7am–6pm). Add "More hours" for quote requests if you answer texts/emails later. Profiles showing "Open Now" during business hours rank better.</div>
+        </div>
+      </div>
+
+      <div class="impact-legend">
+        <span class="dot" style="background:#dc2626"></span> High impact &nbsp;
+        <span class="dot" style="background:#f97316"></span> Medium impact &nbsp;
+        <span class="dot" style="background:#94a3b8"></span> Lower impact
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 2: SERVICES & PHOTOS ══ -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-icon">📸</div>
+      <div>
+        <div class="phase-title">Phase 2 — Services & Photos</div>
+        <div class="phase-desc">Photos drive conversions. Services drive keyword matching.</div>
+      </div>
+      <span class="phase-badge badge-do-first">Do First</span>
+    </div>
+    <div class="checklist">
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Add all services with descriptions and prices</div>
+          <div class="item-detail">
+            In GBP → Services, add each one with a real description. Include a price range — profiles with pricing get more clicks.<br><br>
+            <span class="tag">Roof Soft Wash — $350–700</span>
+            <span class="tag">House Exterior Wash — $200–400</span>
+            <span class="tag">Driveway / Concrete Cleaning — $100–200</span>
+            <span class="tag">Screen Enclosure Cleaning — $150–300</span>
+            <span class="tag">Gutter Flush — $80–150</span>
+          </div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Upload 10+ before/after photos immediately</div>
+          <div class="item-detail">Google weighs photo count and recency. Before/after pairs are the most compelling content for this service type. <strong>Name your photo files before uploading</strong> — Google reads filenames. Use: <span class="tag kw">roof-soft-wash-eustis-fl.jpg</span> <span class="tag kw">pressure-washing-lake-county.jpg</span> <span class="tag kw">driveway-cleaning-before-after.jpg</span></div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Add a cover photo and logo</div>
+          <div class="item-detail">Cover photo: your best before/after side-by-side, or a clean shot of your van with equipment visible. Logo: if you don't have one, a clean text-on-white image with "Blue Lake Services" works. Canva can make this in 10 minutes.</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Add a video walkthrough (60 seconds)</div>
+          <div class="item-detail">Film while doing a job — before the wash, during, after. No editing needed. GBP profiles with video rank measurably higher in competitive searches. Most competitors have zero videos.</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Enable messaging (Google's built-in chat)</div>
+          <div class="item-detail">In GBP, turn on "Accept messages." Set a welcome message like: "Hi! Thanks for reaching out to Blue Lake Services. Send your address and I'll get you a quote within a few hours." Fast response time boosts your profile's "Responsiveness" score.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 3: REVIEWS (Critical) ══ -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-icon">⭐</div>
+      <div>
+        <div class="phase-title">Phase 3 — Reviews (Your #1 Conversion Factor)</div>
+        <div class="phase-desc">Google uses review count, recency, and star rating as a major ranking signal. 15+ reviews puts you ahead of most local competitors.</div>
+      </div>
+      <span class="phase-badge badge-do-first">Do First</span>
+    </div>
+
+    <div class="tip-box">
+      <strong>The Review Request System — do this after every single job</strong>
+      Text the customer within 2 hours of finishing: <em>"Thanks for letting us take care of your home today! If you're happy with the results, a quick Google review means the world to a small local business. Here's the link: [your GBP review link]"</em><br><br>
+      Your GBP review link: <strong>business.google.com → Get more reviews → Copy link</strong>. Save this as a text template so you can send it in 15 seconds.
+    </div>
+
+    <div class="checklist">
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Generate and save your GBP review link</div>
+          <div class="item-detail">GBP dashboard → Get more reviews → Copy the short link. Save it in your phone as a text template. This link goes directly to the review form — one tap for the customer.</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Text every past customer for a review (one-time blast)</div>
+          <div class="item-detail">
+            Send this to every satisfied customer you've worked with:<br>
+            <div class="review-template">
+              <div class="rt-label">Review Request Text</div>
+              Hey [Name]! It's Chris from Blue Lake Services. Hope your [roof / driveway / house] is still looking great! I'm growing my business and Google reviews make a huge difference. If you have 30 seconds, I'd really appreciate it: [LINK]. Thanks so much!
+            </div>
+            <span class="tag hot">Target: 15+ reviews in first 30 days</span>
+          </div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Respond to every review — 5-star and negative</div>
+          <div class="item-detail">
+            Google rewards owners who respond. For 5-star reviews, thank them and mention the service + location: "Thanks so much, Mike! Really glad the roof soft wash on your Eustis home turned out great — the algae staining was significant and it cleans up beautifully."<br><br>
+            For negative reviews (rare, but important): Stay calm, acknowledge, offer to fix it. Never argue.
+          </div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Add review request to your invoice / follow-up process</div>
+          <div class="item-detail">If you send a text invoice or email receipt, append the review link at the bottom. "Loved our work? Leave us a review: [link]" — passive but adds up over time.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 4: KEYWORD TARGETING ══ -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-icon">🔍</div>
+      <div>
+        <div class="phase-title">Phase 4 — Local Keyword Strategy</div>
+        <div class="phase-desc">The exact search terms people in Lake County use. Work these into your description, posts, and review responses.</div>
+      </div>
+      <span class="phase-badge badge-ongoing">Ongoing</span>
+    </div>
+    <div class="checklist">
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-high"></div>
+        <div class="item-body">
+          <div class="item-title">Know your primary target keywords</div>
+          <div class="item-detail">
+            <table class="kw-table">
+              <tr><th>Keyword</th><th>Search Volume</th><th>Competition</th><th>Priority</th></tr>
+              <tr><td>pressure washing Eustis FL</td><td><div class="vol-bar"><div class="vol-fill" style="width:60%"></div></div></td><td>Low</td><td><span class="tag hot">#1 Target</span></td></tr>
+              <tr><td>roof cleaning Lake County FL</td><td><div class="vol-bar"><div class="vol-fill" style="width:55%"></div></div></td><td>Low</td><td><span class="tag hot">#1 Target</span></td></tr>
+              <tr><td>soft wash roof Eustis</td><td><div class="vol-bar"><div class="vol-fill" style="width:40%"></div></div></td><td>Very Low</td><td><span class="tag kw">High</span></td></tr>
+              <tr><td>house washing Mount Dora FL</td><td><div class="vol-bar"><div class="vol-fill" style="width:45%"></div></div></td><td>Low</td><td><span class="tag kw">High</span></td></tr>
+              <tr><td>driveway cleaning Tavares FL</td><td><div class="vol-bar"><div class="vol-fill" style="width:35%"></div></div></td><td>Very Low</td><td><span class="tag">Medium</span></td></tr>
+              <tr><td>exterior cleaning near me</td><td><div class="vol-bar"><div class="vol-fill" style="width:80%"></div></div></td><td>Medium</td><td><span class="tag">Medium</span></td></tr>
+              <tr><td>pressure washer Leesburg FL</td><td><div class="vol-bar"><div class="vol-fill" style="width:50%"></div></div></td><td>Low</td><td><span class="tag">Medium</span></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Add a Q&A section to your GBP</div>
+          <div class="item-detail">You can add your OWN questions and answers in GBP — Google indexes these for search. Add these:<br>
+            <span class="tag">"Do you clean roofs in Eustis FL?"</span>
+            <span class="tag">"How much does pressure washing cost in Lake County?"</span>
+            <span class="tag">"Is soft washing safe for older roofs?"</span>
+            <span class="tag">"Do you service Mount Dora and Tavares?"</span>
+            Answer each one with a detailed, keyword-rich response.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 5: WEEKLY POSTS ══ -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-icon">📅</div>
+      <div>
+        <div class="phase-title">Phase 5 — GBP Posts (Weekly Cadence)</div>
+        <div class="phase-desc">GBP posts expire after 7 days. One post per week keeps your profile "active" — a ranking signal Google looks for.</div>
+      </div>
+      <span class="phase-badge badge-weekly">Weekly</span>
+    </div>
+    <div class="checklist">
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Post a before/after photo every week</div>
+          <div class="item-detail">Caption formula: <em>"[Service] in [City] — [one sentence about what we found] → [one sentence about the result]. Call or book online for a free quote. 📞 (352) ___-____"</em><br><br>
+            Example: "Roof soft wash in Eustis — this 20-year-old roof had significant algae buildup on the north face. After treatment, the original color is back. Free quotes for Lake County homeowners."</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Post a seasonal offer or tip monthly</div>
+          <div class="item-detail">Florida's rainy season (June–Sept) is your best opening: "Lake County's wet season accelerates algae growth on roofs. We're booking August cleans now — schedule early." Post as "Offer" type in GBP for extra visibility.</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-low"></div>
+        <div class="item-body">
+          <div class="item-title">Check GBP Insights weekly (5 min)</div>
+          <div class="item-detail">GBP → Insights shows: how many people searched for you, called, clicked directions. Track "Searches" and "Calls" week over week. This tells you if your optimization is working — expect to see it grow after Phase 1–3 are done.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 6: DIRECTORY CONSISTENCY ══ -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-icon">📋</div>
+      <div>
+        <div class="phase-title">Phase 6 — Directory Consistency (NAP)</div>
+        <div class="phase-desc">Your Name, Address, Phone must be identical everywhere. Inconsistency confuses Google and suppresses your ranking.</div>
+      </div>
+      <span class="phase-badge badge-ongoing">One-Time Setup</span>
+    </div>
+    <div class="checklist">
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Create/claim Yelp listing — match GBP exactly</div>
+          <div class="item-detail">yelp.com/biz. Use same business name, phone, service area. Yelp ranks well in Google for "[service] reviews" searches — it drives referral traffic.</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-med"></div>
+        <div class="item-body">
+          <div class="item-title">Create Facebook Business Page</div>
+          <div class="item-detail">Before/after photos on Facebook + tagging the neighborhood can go semi-viral locally. Add your GBP review link to the Facebook bio. Your phone and hours must match GBP exactly.</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-low"></div>
+        <div class="item-body">
+          <div class="item-title">Add to Nextdoor Business (free)</div>
+          <div class="item-detail"><a href="https://business.nextdoor.com" target="_blank">business.nextdoor.com</a> — create a free business page for your service area. This puts you in the neighborhood feed. Separate from your personal Nextdoor profile (keep both).</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggle(this)">
+        <div class="checkbox"></div>
+        <div class="impact-dot impact-low"></div>
+        <div class="item-body">
+          <div class="item-title">Submit to HomeAdvisor / Angi (free tier only)</div>
+          <div class="item-detail">Create a free profile — do NOT pay for leads yet. Their free listings rank in Google and provide a citation for your NAP. Paid lead programs on Angi are overpriced for solo operators — skip those.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggle(el) {
+    el.classList.toggle('done');
+    updateProgress();
+  }
+  function updateProgress() {
+    const all = document.querySelectorAll('.check-item').length;
+    const done = document.querySelectorAll('.check-item.done').length;
+    const pct = Math.round((done/all)*100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressCount').textContent = done + ' / ' + all + ' done';
+  }
+  updateProgress();
+</script>
+</body>
+</html>
