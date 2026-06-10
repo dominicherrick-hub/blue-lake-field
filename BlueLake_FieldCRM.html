@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Blue Lake Field</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --blue:#1a6eb5; --blue-lt:#e8f2fb; --blue-dk:#155a94;
+  --green:#1a7a4a; --green-lt:#e6f5ed;
+  --orange:#c45e00; --orange-lt:#fff0e0;
+  --red:#b52020; --red-lt:#fdeaea;
+  --yellow:#b58a00; --yellow-lt:#fffbe6;
+  --gray:#6b7280; --gray-lt:#f3f4f6;
+  --border:#d1d5db; --text:#111827; --muted:#6b7280;
+  --white:#fff; --shadow:0 1px 3px rgba(0,0,0,.12);
+  --r:10px; --sb:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+input,textarea,select{user-select:text;-webkit-user-select:text;-webkit-touch-callout:default}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;color:var(--text);background:#f0f4f8;overscroll-behavior:none}
+
+/* ── AUTH ── */
+#auth-screen{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#1a6eb5 0%,#155a94 100%)}
+.auth-logo{font-size:28px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:4px}
+.auth-sub{font-size:13px;color:rgba(255,255,255,.75);margin-bottom:36px}
+.auth-card{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.auth-title{font-size:18px;font-weight:700;margin-bottom:20px}
+.auth-err{background:var(--red-lt);color:var(--red);font-size:13px;padding:10px 12px;border-radius:8px;margin-bottom:14px;display:none}
+.auth-err.show{display:block}
+.field-lbl{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;margin-top:14px}
+.inp{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;outline:none;transition:border-color .15s;background:#fff}
+.inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,110,181,.1)}
+textarea.inp{resize:none;min-height:80px}
+.btn{width:100%;padding:13px;border-radius:9px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn-primary{background:var(--blue);color:#fff;margin-top:20px}
+.btn-link{background:none;color:var(--blue);font-size:14px;margin-top:10px;padding:8px}
+.btn-outline{background:none;border:1.5px solid var(--border);color:var(--text)}
+.btn-danger{background:var(--red);color:#fff}
+
+/* ── LAYOUT ── */
+#app{display:none;flex-direction:column;min-height:100dvh}
+.header{background:var(--blue);color:#fff;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.header-title{font-size:17px;font-weight:700;flex:1}
+.header-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer}
+.header-back{font-size:22px;cursor:pointer;line-height:1;background:none;border:none;color:#fff;padding:4px}
+.content{flex:1;overflow-y:auto;padding-bottom:calc(70px + var(--sb))}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;padding-bottom:var(--sb);z-index:50}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;cursor:pointer;border:none;background:none;color:var(--gray);font-size:10px;font-weight:500;gap:3px}
+.nav-item.active{color:var(--blue)}
+.nav-icon{font-size:20px;line-height:1}
+
+/* ── SLIM HOME HEADER ── */
+.slim-header{background:var(--blue);color:#fff;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.slim-logo{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.slim-refresh{background:rgba(255,255,255,.18);border:none;color:#fff;font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+
+/* ── FILTER TABS ── */
+.filter-tabs{background:#fff;border-bottom:1px solid var(--border);display:flex;overflow-x:auto;padding:0 8px;scrollbar-width:none}
+.filter-tabs::-webkit-scrollbar{display:none}
+.ftab{padding:11px 12px;font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.ftab.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* ── SEARCH ── */
+.search-bar{padding:10px 14px;background:#fff;border-bottom:1px solid var(--border)}
+.search-bar input{width:100%;padding:9px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:var(--gray-lt)}
+.search-bar input:focus{background:#fff;border-color:var(--blue)}
+
+/* ── PROSPECT CARDS ── */
+.prospect-card{display:block;width:calc(100% - 24px);margin:8px 12px;border-radius:var(--r);box-shadow:var(--shadow);padding:14px;cursor:pointer;transition:transform .1s;touch-action:manipulation;background:#fff;border:none;text-align:left;font-family:inherit;font-size:inherit;color:inherit}
+.prospect-card:active{transform:scale(.98)}
+.pc-header{display:flex;align-items:flex-start;gap:10px}
+.pc-score{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0}
+.score-hot{background:var(--red-lt);color:var(--red)}
+.score-warm{background:var(--orange-lt);color:var(--orange)}
+.score-cool{background:var(--blue-lt);color:var(--blue)}
+.pc-info{flex:1;min-width:0}
+.pc-name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-addr{font-size:12px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-stage{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+.stage-lead{background:var(--gray-lt);color:var(--gray)}
+.stage-contact{background:var(--blue-lt);color:var(--blue)}
+.stage-estimate{background:var(--yellow-lt);color:var(--yellow)}
+.stage-follow-up{background:var(--orange-lt);color:var(--orange)}
+.stage-won{background:var(--green-lt);color:var(--green)}
+.pc-meta{display:flex;gap:12px;margin-top:10px;font-size:12px;color:var(--muted)}
+.pc-next{margin-top:8px;font-size:12px;color:var(--muted);background:var(--gray-lt);padding:6px 10px;border-radius:6px}
+.fab{position:fixed;bottom:calc(78px + var(--sb));right:16px;width:52px;height:52px;border-radius:50%;background:var(--blue);color:#fff;font-size:26px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(26,110,181,.4);display:flex;align-items:center;justify-content:center;z-index:40}
+
+/* ── DOORSTEP HUD ── */
+.hud-hero{background:var(--blue);color:#fff;padding:16px}
+.hud-stage-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.hud-stage-pill{font-size:12px;font-weight:700;padding:3px 12px;border-radius:20px;background:rgba(255,255,255,.2)}
+.hud-score{font-size:13px;font-weight:700;padding:3px 10px;border-radius:20px}
+.hud-score-hot{background:var(--red-lt);color:var(--red)}
+.hud-score-warm{background:var(--orange-lt);color:var(--orange)}
+.hud-score-cool{background:var(--blue-lt);color:var(--blue)}
+.hud-owner{font-size:24px;font-weight:800;line-height:1.15;margin-bottom:4px}
+.hud-addr{font-size:14px;opacity:.85;margin-bottom:14px}
+.hud-actions{display:flex;gap:8px;flex-wrap:wrap}
+.hud-btn{flex:1;min-width:56px;background:rgba(255,255,255,.18);border:none;color:#fff;padding:9px 4px;border-radius:9px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;touch-action:manipulation}
+.hud-btn-icon{font-size:20px;line-height:1}
+.hud-btn:active{opacity:.7}
+
+/* Property stats grid */
+.hud-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:14px}
+.hud-stat{background:var(--gray-lt);border-radius:9px;padding:11px 12px}
+.hud-stat-val{font-size:20px;font-weight:800;color:var(--text)}
+.hud-stat-warn{color:var(--red)}
+.hud-stat-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* HUD sections */
+.hud-section{padding:12px 16px;border-top:1px solid var(--gray-lt)}
+.hud-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px}
+.hud-chip-row{display:flex;flex-wrap:wrap;gap:6px}
+.hud-chip{background:var(--blue-lt);color:var(--blue);padding:4px 10px;border-radius:20px;font-size:13px;font-weight:500}
+.hud-next-box{background:var(--blue-lt);border-radius:8px;padding:12px;font-size:14px;line-height:1.5;color:var(--blue);font-weight:600}
+.hud-note-box{background:var(--gray-lt);border-radius:8px;padding:12px;font-size:14px;line-height:1.5;color:var(--muted)}
+.hud-stage-select{display:flex;align-items:center;gap:8px;padding:11px 16px;background:#fff;border-top:1px solid var(--border)}
+.hud-stage-select label{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.hud-stage-select select{flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-weight:600;outline:none;background:#fff;cursor:pointer}
+
+/* ── FIELD COACH ── */
+.coach-card{margin:0;border-top:3px solid var(--blue);background:var(--blue-lt)}
+.coach-header{display:flex;align-items:center;gap:8px;padding:12px 16px 8px}
+.coach-icon{font-size:18px}
+.coach-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--blue)}
+.coach-open{padding:0 16px 12px;font-size:14px;color:var(--text);line-height:1.5;font-style:italic;border-bottom:1px solid rgba(26,110,181,.15)}
+.coach-open strong{font-style:normal;font-weight:700;color:var(--blue-dk)}
+.coach-block{padding:10px 16px}
+.coach-block-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--blue-dk);margin-bottom:6px}
+.coach-q{font-size:13px;color:var(--text);padding:4px 0;display:flex;align-items:flex-start;gap:6px;line-height:1.4}
+.coach-q::before{content:"›";font-weight:700;color:var(--blue);flex-shrink:0;margin-top:1px}
+.coach-next{background:var(--blue);color:#fff;border-radius:8px;padding:10px 12px;font-size:13px;font-weight:600;line-height:1.4;margin:0 16px 12px}
+.coach-tip{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--orange);background:var(--orange-lt);border-radius:7px;padding:8px 10px;margin:0 16px 10px;line-height:1.4}
+.coach-tip-icon{flex-shrink:0;font-size:15px}
+
+/* Visit cards */
+.visit-card{background:#fff;border-radius:var(--r);margin:0 14px 10px;box-shadow:var(--shadow);padding:13px}
+.visit-date{font-size:12px;color:var(--muted);margin-bottom:6px}
+.visit-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--gray-lt);color:var(--gray);font-weight:500}
+.badge-blue{background:var(--blue-lt);color:var(--blue)}
+.badge-orange{background:var(--orange-lt);color:var(--orange)}
+.visit-notes-text{font-size:13px;color:var(--muted)}
+.hud-show-visits{display:block;text-align:center;padding:10px;font-size:13px;color:var(--blue);font-weight:600;cursor:pointer;border:none;background:none;width:100%}
+
+/* ── NEARBY ── */
+.nearby-bar{background:var(--blue);color:#fff;padding:12px 16px}
+.nearby-gps{font-size:13px;opacity:.85;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.nearby-job-row{display:flex;align-items:center;gap:8px}
+.nearby-job-row select{flex:1;padding:8px 10px;border:none;border-radius:8px;font-size:13px;font-weight:600;background:rgba(255,255,255,.2);color:#fff;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none}
+.nearby-job-row select option{background:#1a6eb5;color:#fff}
+.nearby-job-lbl{font-size:12px;white-space:nowrap;opacity:.85}
+
+.nearby-card{display:block;width:calc(100% - 24px);background:#fff;margin:8px 12px;border-radius:var(--r);box-shadow:var(--shadow);padding:14px;cursor:pointer;touch-action:manipulation;border:none;text-align:left;font-family:inherit;font-size:inherit;color:inherit}
+.nearby-card:active{transform:scale(.98);transition:transform .1s}
+.nearby-dist{font-size:12px;font-weight:700;color:var(--blue);background:var(--blue-lt);padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px}
+.nearby-name{font-size:15px;font-weight:700}
+.nearby-addr{font-size:12px;color:var(--muted);margin-top:2px;margin-bottom:8px}
+.nearby-approach{display:flex;align-items:flex-start;gap:7px;background:var(--yellow-lt);border-radius:7px;padding:9px 10px}
+.nearby-approach-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.nearby-approach-text{font-size:12px;color:var(--yellow);font-weight:600;line-height:1.4}
+.nearby-approach-detail{font-size:12px;color:var(--muted);font-weight:400;margin-top:2px;line-height:1.4}
+.nearby-empty{text-align:center;padding:48px 24px;color:var(--muted)}
+.nearby-empty-icon{font-size:40px;margin-bottom:10px}
+.nearby-empty-text{font-size:15px;font-weight:600}
+.nearby-empty-sub{font-size:13px;margin-top:4px}
+
+/* ── CHECKIN SHEET ── */
+.checkin-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.checkin-title{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)}
+.option-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.option-grid-3{grid-template-columns:repeat(3,1fr)}
+.option-btn{padding:10px 8px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:13px;cursor:pointer;text-align:center;transition:all .15s;touch-action:manipulation}
+.option-btn.selected{border-color:var(--blue);background:var(--blue-lt);color:var(--blue);font-weight:600}
+.option-btn:active{opacity:.7}
+
+/* ── ADD FORM ── */
+.add-form{background:#fff;padding:16px}
+.add-form .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.add-form .section-title:first-child{margin-top:0;padding-top:0;border-top:none}
+.radio-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.radio-chip{padding:7px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;background:#fff;touch-action:manipulation}
+.radio-chip.selected{border-color:var(--blue);background:var(--blue-lt);color:var(--blue);font-weight:600}
+
+/* ── SETTINGS ── */
+.settings-section{background:#fff;margin:12px;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.settings-row{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--gray-lt);gap:12px}
+.settings-row:last-child{border-bottom:none}
+.settings-icon{font-size:20px;width:28px;text-align:center}
+.settings-label{flex:1;font-size:15px}
+.settings-value{font-size:14px;color:var(--muted)}
+
+/* ── SHEETS ── */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:flex-end}
+.sheet-overlay.show{display:flex}
+.sheet{background:#fff;border-radius:16px 16px 0 0;width:100%;max-height:90dvh;overflow-y:auto;padding:0 0 calc(16px + var(--sb));animation:slideUp .25s ease}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 6px}
+.sheet-title{font-size:17px;font-weight:700;padding:8px 16px 14px;border-bottom:1px solid var(--border)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:max(60px,env(safe-area-inset-top,60px));left:50%;transform:translateX(-50%) translateY(-20px);background:var(--text);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;font-weight:500;opacity:0;transition:all .25s;z-index:1200;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── MISC ── */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:12px;color:var(--muted);font-size:14px}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.empty-text{font-size:15px;font-weight:600}
+.empty-sub{font-size:13px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-logo">🏠 Blue Lake</div>
+  <div class="auth-sub">Field App</div>
+  <div class="auth-card">
+    <div class="auth-title" id="auth-title">Sign In</div>
+    <div class="auth-err" id="auth-err"></div>
+    <div id="auth-signup-name" style="display:none">
+      <div class="field-lbl">Full Name</div>
+      <input class="inp" id="auth-name" type="text" placeholder="Your name" autocomplete="name">
+    </div>
+    <div class="field-lbl">Email</div>
+    <input class="inp" id="auth-email" type="email" placeholder="you@bluelakeservices.com" autocomplete="email">
+    <div class="field-lbl">Password</div>
+    <input class="inp" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn btn-primary" id="auth-submit-btn" onclick="authSubmit()">Sign In</button>
+    <button class="btn btn-link" id="auth-toggle-btn" onclick="toggleAuthMode()">New team member? Create account →</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <!-- HOME: PROSPECT LIST -->
+  <div id="screen-home" style="display:flex;flex-direction:column;min-height:100dvh">
+    <div class="slim-header">
+      <span class="slim-logo">🏠 Blue Lake</span>
+      <button class="slim-refresh" onclick="loadProspects(true)" title="Refresh">↻</button>
+    </div>
+    <div class="filter-tabs" id="stage-filter-tabs">
+      <div class="ftab active" onclick="setFilter('all',this)">All</div>
+      <div class="ftab" onclick="setFilter('lead',this)">Lead</div>
+      <div class="ftab" onclick="setFilter('contact',this)">Contact</div>
+      <div class="ftab" onclick="setFilter('estimate',this)">Estimate</div>
+      <div class="ftab" onclick="setFilter('follow-up',this)">Follow-up</div>
+      <div class="ftab" onclick="setFilter('won',this)">Won</div>
+    </div>
+    <div class="search-bar">
+      <input type="search" id="prospect-search" placeholder="🔍  Name or address…" oninput="renderProspects()">
+    </div>
+    <div id="prospect-list" class="content" style="padding-bottom:80px"></div>
+    <button class="fab" onclick="showAddProspect()">+</button>
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="showScreen('home',this)"><span class="nav-icon">🏠</span>Prospects</button>
+      <button class="nav-item" onclick="showScreen('nearby',this)"><span class="nav-icon">📍</span>Nearby</button>
+      <button class="nav-item" onclick="showScreen('settings',this)"><span class="nav-icon">⚙️</span>Settings</button>
+    </nav>
+  </div>
+
+  <!-- NEARBY: GPS LIST -->
+  <div id="screen-nearby" style="display:none;flex-direction:column;min-height:100dvh">
+    <div class="nearby-bar">
+      <div class="nearby-gps" id="nearby-gps-status"><span>📍</span><span>Locating you…</span></div>
+      <div class="nearby-job-row">
+        <span class="nearby-job-lbl">On a job at:</span>
+        <select id="nearby-job-select" onchange="renderNearby()">
+          <option value="">— not on a job —</option>
+        </select>
+      </div>
+    </div>
+    <div id="nearby-list" class="content" style="padding-bottom:80px"></div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="showScreen('home',this)"><span class="nav-icon">🏠</span>Prospects</button>
+      <button class="nav-item active" onclick="showScreen('nearby',this)"><span class="nav-icon">📍</span>Nearby</button>
+      <button class="nav-item" onclick="showScreen('settings',this)"><span class="nav-icon">⚙️</span>Settings</button>
+    </nav>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="screen-settings" style="display:none;flex-direction:column;min-height:100dvh">
+    <div class="header"><div class="header-title">Settings</div></div>
+    <div class="content">
+      <div style="padding:16px 16px 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Account</div>
+      <div class="settings-section">
+        <div class="settings-row"><span class="settings-icon">👤</span><span class="settings-label">Name</span><span class="settings-value" id="settings-name">—</span></div>
+        <div class="settings-row"><span class="settings-icon">✉️</span><span class="settings-label">Email</span><span class="settings-value" id="settings-email">—</span></div>
+      </div>
+      <div style="padding:16px 16px 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">App</div>
+      <div class="settings-section">
+        <div class="settings-row" onclick="loadProspects(true)" style="cursor:pointer"><span class="settings-icon">🔄</span><span class="settings-label">Refresh Data</span></div>
+        <div class="settings-row" onclick="signOut()" style="cursor:pointer"><span class="settings-icon">🚪</span><span class="settings-label" style="color:var(--red)">Sign Out</span></div>
+      </div>
+      <div style="padding:16px 16px 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Geocode Cache</div>
+      <div class="settings-section">
+        <div class="settings-row"><span class="settings-icon">🗺️</span><span class="settings-label">Addresses cached</span><span class="settings-value" id="geocache-count">—</span></div>
+        <div class="settings-row" onclick="clearGeoCache()" style="cursor:pointer"><span class="settings-icon">🗑️</span><span class="settings-label">Clear cache</span></div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="showScreen('home',this)"><span class="nav-icon">🏠</span>Prospects</button>
+      <button class="nav-item" onclick="showScreen('nearby',this)"><span class="nav-icon">📍</span>Nearby</button>
+      <button class="nav-item active" onclick="showScreen('settings',this)"><span class="nav-icon">⚙️</span>Settings</button>
+    </nav>
+  </div>
+
+  <!-- DETAIL: DOORSTEP HUD -->
+  <div id="screen-detail" style="display:none;flex-direction:column;min-height:100dvh">
+    <div class="header">
+      <button class="header-back" onclick="backToList()">‹</button>
+      <div class="header-title" id="detail-header-title">Prospect</div>
+      <button class="header-btn" onclick="showEditProspect()">Edit</button>
+    </div>
+    <div class="content" id="detail-content"></div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ADD / EDIT PROSPECT SHEET -->
+<div class="sheet-overlay" id="add-sheet">
+  <div class="sheet" style="max-height:95dvh">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="add-sheet-title">Add Prospect</div>
+    <div class="add-form">
+      <input type="hidden" id="edit-prospect-id">
+      <div class="section-title">Property</div>
+      <div class="field-lbl">Street Address *</div>
+      <input class="inp" id="f-address" placeholder="123 Main St">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><div class="field-lbl">City</div><input class="inp" id="f-city" placeholder="Eustis"></div>
+        <div><div class="field-lbl">ZIP</div><input class="inp" id="f-zip" placeholder="32726"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+        <div><div class="field-lbl">Sq Ft</div><input class="inp" id="f-sqft" type="number" placeholder="2000"></div>
+        <div><div class="field-lbl">Yr Built</div><input class="inp" id="f-year" type="number" placeholder="2005"></div>
+        <div><div class="field-lbl">Est. Value</div><input class="inp" id="f-value" placeholder="$350k"></div>
+      </div>
+      <div class="section-title">Owner</div>
+      <div class="field-lbl">Owner Name</div>
+      <input class="inp" id="f-owner" placeholder="John & Jane Smith">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><div class="field-lbl">Phone</div><input class="inp" id="f-phone" type="tel" placeholder="(352) 555-0100"></div>
+        <div><div class="field-lbl">Email</div><input class="inp" id="f-email" type="email" placeholder="owner@email.com"></div>
+      </div>
+      <div class="section-title">Pipeline</div>
+      <div class="field-lbl">Stage</div>
+      <div class="radio-row" id="f-stage-row">
+        <div class="radio-chip selected" onclick="selectChip(this,'stage')">Lead</div>
+        <div class="radio-chip" onclick="selectChip(this,'stage')">Contact</div>
+        <div class="radio-chip" onclick="selectChip(this,'stage')">Estimate</div>
+        <div class="radio-chip" onclick="selectChip(this,'stage')">Follow-up</div>
+        <div class="radio-chip" onclick="selectChip(this,'stage')">Won</div>
+      </div>
+      <div class="field-lbl" style="margin-top:12px">Score (1–10)</div>
+      <input class="inp" id="f-score" type="number" min="1" max="10" placeholder="7">
+      <div class="field-lbl">Services</div>
+      <div class="radio-row" id="f-services-row">
+        <div class="radio-chip" onclick="toggleChip(this)">Roof Wash</div>
+        <div class="radio-chip" onclick="toggleChip(this)">Soft Wash</div>
+        <div class="radio-chip" onclick="toggleChip(this)">Gutter Clean</div>
+        <div class="radio-chip" onclick="toggleChip(this)">Window Wash</div>
+        <div class="radio-chip" onclick="toggleChip(this)">Driveway</div>
+        <div class="radio-chip" onclick="toggleChip(this)">Deck/Patio</div>
+      </div>
+      <div class="section-title">Notes</div>
+      <div class="field-lbl">Next Action</div>
+      <input class="inp" id="f-next" placeholder="Door knock — introduce yourself">
+      <div class="field-lbl">Notes</div>
+      <textarea class="inp" id="f-notes" rows="3" placeholder="Observations, context…"></textarea>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-outline" style="flex:1" onclick="closeAddSheet()">Cancel</button>
+        <button class="btn btn-primary" style="flex:2" onclick="saveProspect()">Save Prospect</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECK-IN SHEET -->
+<div class="sheet-overlay" id="checkin-sheet">
+  <div class="sheet" style="max-height:95dvh">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="checkin-title">Log Visit</div>
+    <div>
+      <div class="checkin-section">
+        <div class="checkin-title">Homeowner present?</div>
+        <div class="option-grid">
+          <div class="option-btn" onclick="selectOption(this,'present')">✅ Yes, home</div>
+          <div class="option-btn" onclick="selectOption(this,'present')">❌ Not home</div>
+          <div class="option-btn" onclick="selectOption(this,'present')">🚗 Just left</div>
+          <div class="option-btn" onclick="selectOption(this,'present')">📋 Left card</div>
+        </div>
+      </div>
+      <div class="checkin-section">
+        <div class="checkin-title">Visit type?</div>
+        <div class="option-grid">
+          <div class="option-btn" onclick="selectOption(this,'vtype')">👋 Door knock</div>
+          <div class="option-btn" onclick="selectOption(this,'vtype')">🔄 Follow-up</div>
+          <div class="option-btn" onclick="selectOption(this,'vtype')">📄 Estimate</div>
+          <div class="option-btn" onclick="selectOption(this,'vtype')">🔧 Service</div>
+        </div>
+      </div>
+      <div class="checkin-section">
+        <div class="checkin-title">Roof condition (from driveway)?</div>
+        <div class="option-grid option-grid-3">
+          <div class="option-btn" onclick="selectOption(this,'roof')">👍 Good</div>
+          <div class="option-btn" onclick="selectOption(this,'roof')">⚠️ Fair</div>
+          <div class="option-btn" onclick="selectOption(this,'roof')">🔴 Damaged</div>
+          <div class="option-btn" onclick="selectOption(this,'roof')">❓ Can't tell</div>
+        </div>
+      </div>
+      <div class="checkin-section">
+        <div class="checkin-title">Interest level?</div>
+        <div class="option-grid option-grid-3">
+          <div class="option-btn" onclick="selectOption(this,'interest')">🔥 Hot</div>
+          <div class="option-btn" onclick="selectOption(this,'interest')">👍 Warm</div>
+          <div class="option-btn" onclick="selectOption(this,'interest')">❄️ Cold</div>
+        </div>
+      </div>
+      <div class="checkin-section">
+        <div class="checkin-title">Notes</div>
+        <textarea class="inp" id="visit-notes" rows="3" placeholder="What happened, what was said…"></textarea>
+      </div>
+      <div style="padding:12px 16px;display:flex;gap:10px">
+        <button class="btn btn-outline" style="flex:1" onclick="closeCheckinSheet()">Cancel</button>
+        <button class="btn btn-primary" style="flex:2" onclick="saveVisit()">Save Visit ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── SUPABASE ─────────────────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://mkrygrgdyjsvnifypxkm.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcnlncmdkeWpzdm5pZnlweGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MjM3MjcsImV4cCI6MjA5NjI5OTcyN30.0Mto9P-DJixNTJK1EPolTbFoZR_sD8Q8M-gXnrwTobE';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let prospects = [];
+let currentFilter = 'all';
+let currentProspect = null;
+let currentUser = null;
+let authMode = 'signin';
+let visits = {};
+let userLat = null, userLng = null;
+let geocodeCache = (() => { try { return JSON.parse(localStorage.getItem('bl_geocache') || '{}'); } catch(e) { return {}; } })();
+const YEAR_NOW = 2026;
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { currentUser = session.user; showApp(); }
+  sb.auth.onAuthStateChange((_evt, session) => {
+    if (session && !currentUser) { currentUser = session.user; showApp(); }
+    else if (!session) { currentUser = null; showAuth(); }
+  });
+});
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+async function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  updateGreeting();
+  await loadProspects();
+  backgroundGeocode();
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+function toggleAuthMode() {
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  const s = authMode === 'signup';
+  document.getElementById('auth-title').textContent = s ? 'Create Account' : 'Sign In';
+  document.getElementById('auth-submit-btn').textContent = s ? 'Create Account' : 'Sign In';
+  document.getElementById('auth-toggle-btn').textContent = s ? '← Back to sign in' : 'New team member? Create account →';
+  document.getElementById('auth-signup-name').style.display = s ? 'block' : 'none';
+  document.getElementById('auth-err').classList.remove('show');
+}
+
+async function authSubmit() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-err');
+  errEl.classList.remove('show');
+  if (!email || !password) { errEl.textContent = 'Email and password required.'; errEl.classList.add('show'); return; }
+  const btn = document.getElementById('auth-submit-btn');
+  btn.textContent = '…'; btn.disabled = true;
+  let error;
+  if (authMode === 'signup') {
+    const name = document.getElementById('auth-name').value.trim();
+    const { data, error: e } = await sb.auth.signUp({ email, password, options: { data: { full_name: name } } });
+    error = e;
+    if (!e && data.user) await sb.from('profiles').upsert({ id: data.user.id, full_name: name, role: 'field' });
+  } else {
+    const { error: e } = await sb.auth.signInWithPassword({ email, password });
+    error = e;
+  }
+  btn.textContent = authMode === 'signup' ? 'Create Account' : 'Sign In'; btn.disabled = false;
+  if (error) { errEl.textContent = error.message; errEl.classList.add('show'); }
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  prospects = []; visits = {};
+  showAuth();
+}
+
+// ── DATA ─────────────────────────────────────────────────────────────────────
+async function loadProspects(silent = false) {
+  if (!silent) document.getElementById('prospect-list').innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
+  const { data, error } = await sb.from('prospects').select('*').order('score', { ascending: false });
+  if (error) { showToast('Error loading prospects'); return; }
+  prospects = data || [];
+  updateStats();
+  renderProspects();
+  populateJobSelect();
+  if (silent) showToast('Refreshed ✓');
+}
+
+async function loadVisits(prospectId) {
+  if (!visits[prospectId]) {
+    const { data } = await sb.from('visits').select('*').eq('prospect_id', prospectId).order('visited_at', { ascending: false });
+    visits[prospectId] = data || [];
+  }
+  return visits[prospectId];
+}
+
+// ── STATS (no-op — dashboard removed) ────────────────────────────────────────
+function updateStats() {}
+function updateGreeting() {}
+
+// ── FILTER / RENDER ───────────────────────────────────────────────────────────
+function setFilter(stage, el) {
+  currentFilter = stage;
+  document.querySelectorAll('#stage-filter-tabs .ftab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderProspects();
+}
+
+function renderProspects() {
+  const q = (document.getElementById('prospect-search').value || '').toLowerCase();
+  let list = prospects;
+  if (currentFilter !== 'all') list = list.filter(p => p.stage === currentFilter);
+  if (q) list = list.filter(p =>
+    (p.owner_name || '').toLowerCase().includes(q) ||
+    (p.address || '').toLowerCase().includes(q) ||
+    (p.city || '').toLowerCase().includes(q)
+  );
+  const container = document.getElementById('prospect-list');
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🏘️</div><div class="empty-text">No prospects found</div><div class="empty-sub">Tap + to add one</div></div>';
+    return;
+  }
+  container.innerHTML = list.map(p => {
+    const sc = p.score >= 8 ? 'score-hot' : p.score >= 6 ? 'score-warm' : 'score-cool';
+    const st = 'stage-' + (p.stage || 'lead').replace(' ', '-');
+    return `<button type="button" class="prospect-card" onclick="openProspect(${p.id})">
+      <div class="pc-header">
+        <div class="pc-score ${sc}">${p.score || '–'}</div>
+        <div class="pc-info">
+          <div class="pc-name">${p.owner_name || 'Unknown Owner'}</div>
+          <div class="pc-addr">${p.address}${p.city ? ', ' + p.city : ''}</div>
+        </div>
+        <span class="pc-stage ${st}">${cap(p.stage || 'lead')}</span>
+      </div>
+      ${p.services?.length ? `<div class="pc-meta"><span>🧹 ${p.services.join(', ')}</span>${p.job_value ? '<span>💰 ' + p.job_value + '</span>' : ''}</div>` : ''}
+      ${p.next_action ? `<div class="pc-next">→ ${p.next_action}</div>` : ''}
+    </button>`;
+  }).join('');
+}
+
+// ── DOORSTEP HUD ─────────────────────────────────────────────────────────────
+async function openProspect(id) {
+  currentProspect = prospects.find(p => p.id === id);
+  if (!currentProspect) return;
+  showScreenRaw('detail');
+  document.getElementById('detail-header-title').textContent = (currentProspect.owner_name || 'Prospect').split(' ')[0];
+  await renderHUD();
+}
+
+// ── FIELD COACH ───────────────────────────────────────────────────────────────
+function getCoachCard(p) {
+  const stage = p.stage || 'lead';
+  const first = p.owner_name ? p.owner_name.split(' ')[0] : null;
+  const roofAge = p.year_built ? (YEAR_NOW - p.year_built) : null;
+  const hasPhone = !!p.owner_phone;
+  const hasEmail = !!p.owner_email;
+
+  // Opening line templates
+  const openings = {
+    lead: roofAge !== null && roofAge >= 15
+      ? `"Hi, I'm [your name] with Blue Lake — we're working in the neighborhood and I noticed the roof has some age on it. We specialize in soft wash cleaning that can add years to a roof like yours. Mind if I take a quick look?"`
+      : `"Hi, I'm [your name] with Blue Lake. We're in the area today doing exterior cleaning and wanted to introduce ourselves. We work with a lot of homes in this neighborhood."`,
+    contact: `"${first ? 'Hey ' + first + ', it\'s' : 'Hi, this is'} [your name] from Blue Lake — just wanted to follow up from when we connected."`,
+    estimate: `"${first ? 'Hey ' + first + ',' : 'Hi,'} I wanted to check in on that estimate I put together — do you have any questions on it, or is there anything I can adjust?"`,
+    'follow-up': `"${first ? 'Hey ' + first + ',' : 'Hi,'} it's [your name] from Blue Lake. We're back in the neighborhood this week and wanted to check in — we actually have a few jobs nearby which makes the timing good for you."`,
+    won: `"${first ? 'Hey ' + first + ',' : 'Hey,'} it's [your name] from Blue Lake — we were in the area and wanted to stop by and say hi. How did everything look after the last service?"`
+  };
+
+  // Questions by stage
+  const questions = {
+    lead: [
+      'How long have you been in the home?',
+      'Have you had the exterior or roof cleaned before?',
+      'Do you have an HOA, or are you free to choose your own vendors?'
+    ],
+    contact: [
+      'Did you get a chance to look at what we talked about?',
+      'Is there a service you\'d want to start with, or would a full walkthrough help?',
+      'What\'s the biggest thing on your list for the property right now?'
+    ],
+    estimate: [
+      'Did the estimate make sense for what you had in mind?',
+      'Is there anything you\'d want to add, remove, or adjust?',
+      'What would it take to feel confident moving forward?'
+    ],
+    'follow-up': [
+      'Is timing the main thing holding you back, or is there something else?',
+      'We have jobs nearby this week — I could fit you in at a lower setup cost.',
+      'If we could start next week, would that work for you?'
+    ],
+    won: [
+      'Is there anything else on the property you\'ve been wanting to get done?',
+      'How\'s the roof held up since the last wash?',
+      'Do you have any neighbors or friends who might need our help?'
+    ]
+  };
+
+  // Next action by stage
+  const nextActions = {
+    lead: 'Goal: get their name, phone number, and permission to walk the property. Offer a free estimate with no pressure.',
+    contact: 'Goal: schedule an on-site walkthrough or estimate. Leave with a specific date and time.',
+    estimate: 'Goal: close the job or identify the objection. Ask directly: "What would it take to move forward?"',
+    'follow-up': 'Goal: create urgency. Use neighborhood batch pricing or a specific available date to prompt a decision.',
+    won: 'Goal: book a repeat service or upsell. Ask for a referral while you\'re standing there — it\'s the best time.'
+  };
+
+  // Property tips
+  const tips = [];
+  if (roofAge !== null && roofAge >= 20) tips.push({ icon: '⚠️', text: `Roof is ${roofAge} years old — algae and moss are almost certain. Mention you can see buildup from the street.` });
+  else if (roofAge !== null && roofAge >= 15) tips.push({ icon: '🕐', text: `Roof is ${roofAge} years old. Lead with soft wash as preventive maintenance — it extends roof life by years.` });
+  if (p.sqft && p.sqft >= 3500) tips.push({ icon: '📐', text: `Large property (${p.sqft.toLocaleString()} sq ft) — mention the value of a full exterior package vs. individual services.` });
+  if (p.year_built && p.year_built < 2000) tips.push({ icon: '🏚️', text: `Home built in ${p.year_built}. Older surfaces may be more delicate — ask before recommending pressure wash vs. soft wash.` });
+  if (!hasPhone && stage !== 'lead') tips.push({ icon: '📞', text: 'No phone number on file — ask for it today so you can follow up without having to come back.' });
+  if (!hasEmail && (stage === 'estimate' || stage === 'follow-up')) tips.push({ icon: '✉️', text: 'No email on file — get it so you can send the estimate or a written follow-up they can share.' });
+  if (p.services?.includes('Roof Wash') && roofAge !== null && roofAge < 10) tips.push({ icon: '💡', text: 'Newer roof — emphasize appearance and HOA compliance rather than damage prevention.' });
+
+  return {
+    opening: openings[stage] || openings.lead,
+    questions: questions[stage] || questions.lead,
+    next: nextActions[stage] || nextActions.lead,
+    tips
+  };
+}
+
+async function renderHUD() {
+  const p = currentProspect;
+  const roofAge = p.year_built ? (YEAR_NOW - p.year_built) : null;
+  const roofAgeHtml = roofAge !== null
+    ? `<span${roofAge >= 15 ? ' class="hud-stat-warn"' : ''}>${roofAge} yrs${roofAge >= 15 ? ' ⚠️' : ''}</span>`
+    : '–';
+  const scoreClass = (p.score || 0) >= 8 ? 'hud-score-hot' : (p.score || 0) >= 6 ? 'hud-score-warm' : 'hud-score-cool';
+  const stClass = 'stage-' + (p.stage || 'lead').replace(' ', '-');
+  const fullAddr = `${p.address || ''}${p.city ? ', ' + p.city : ''}${p.zip ? ' ' + p.zip : ''}, FL`.trim();
+
+  // Load recent visits
+  const v = await loadVisits(p.id);
+  const lastVisit = v[0];
+  const lastVisitHtml = lastVisit ? `
+    <div class="visit-card" style="margin:0 0 0 0;box-shadow:none;background:var(--gray-lt);border-radius:8px;padding:10px 12px">
+      <div class="visit-date">${formatDate(lastVisit.visited_at)}</div>
+      <div class="visit-badges">
+        ${lastVisit.homeowner_present ? `<span class="badge badge-blue">${lastVisit.homeowner_present}</span>` : ''}
+        ${lastVisit.visit_type ? `<span class="badge">${lastVisit.visit_type}</span>` : ''}
+        ${lastVisit.interest_level ? `<span class="badge ${lastVisit.interest_level.includes('Hot') ? 'badge-orange' : ''}">${lastVisit.interest_level}</span>` : ''}
+      </div>
+      ${lastVisit.notes ? `<div class="visit-notes-text">${lastVisit.notes}</div>` : ''}
+    </div>
+    ${v.length > 1 ? `<button class="hud-show-visits" onclick="showAllVisits()">See all ${v.length} visits →</button>` : ''}
+  ` : '<div style="font-size:13px;color:var(--muted)">No visits yet — tap Check-In above</div>';
+
+  document.getElementById('detail-content').innerHTML = `
+    <!-- HERO -->
+    <div class="hud-hero">
+      <div class="hud-stage-row">
+        <span class="hud-stage-pill pc-stage ${stClass}">${cap(p.stage || 'lead')}</span>
+        ${p.score ? `<span class="hud-score ${scoreClass}">Score ${p.score}/10</span>` : ''}
+        ${p.job_value ? `<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.9)">💰 ${p.job_value}</span>` : ''}
+      </div>
+      <div class="hud-owner">${p.owner_name || 'Unknown Owner'}</div>
+      <div class="hud-addr">${p.address || '—'}${p.city ? ', ' + p.city : ''}${p.zip ? ' ' + p.zip : ''}</div>
+      <div class="hud-actions">
+        ${p.owner_phone ? `<button class="hud-btn" onclick="callPhone('${p.owner_phone}')"><span class="hud-btn-icon">📞</span>Call</button>` : ''}
+        ${p.owner_phone ? `<button class="hud-btn" onclick="textPhone('${p.owner_phone}')"><span class="hud-btn-icon">💬</span>Text</button>` : ''}
+        <button class="hud-btn" onclick="navTo('${fullAddr}')"><span class="hud-btn-icon">🗺️</span>Navigate</button>
+        <button class="hud-btn" onclick="showCheckin()"><span class="hud-btn-icon">📋</span>Check-In</button>
+      </div>
+    </div>
+
+    <!-- STAGE CHANGER -->
+    <div class="hud-stage-select">
+      <label>Stage:</label>
+      <select onchange="updateStage(this.value)">
+        ${['lead','contact','estimate','follow-up','won'].map(s => `<option value="${s}"${p.stage===s?' selected':''}>${cap(s)}</option>`).join('')}
+      </select>
+    </div>
+
+    <!-- PROPERTY STATS GRID -->
+    <div class="hud-grid">
+      <div class="hud-stat">
+        <div class="hud-stat-val">${p.sqft ? p.sqft.toLocaleString() : '–'}</div>
+        <div class="hud-stat-lbl">Sq Ft</div>
+      </div>
+      <div class="hud-stat">
+        <div class="hud-stat-val">${p.year_built || '–'}</div>
+        <div class="hud-stat-lbl">Year Built</div>
+      </div>
+      <div class="hud-stat">
+        <div class="hud-stat-val">${roofAgeHtml}</div>
+        <div class="hud-stat-lbl">Roof Age</div>
+      </div>
+      <div class="hud-stat">
+        <div class="hud-stat-val">${p.value || '–'}</div>
+        <div class="hud-stat-lbl">Est. Value</div>
+      </div>
+    </div>
+
+    <!-- FIELD COACH -->
+    ${(() => {
+      const c = getCoachCard(p);
+      const tipsHtml = c.tips.map(t => `<div class="coach-tip"><span class="coach-tip-icon">${t.icon}</span><span>${t.text}</span></div>`).join('');
+      return `<div class="coach-card">
+        <div class="coach-header"><span class="coach-icon">🎯</span><span class="coach-title">Field Coach — ${cap(p.stage || 'lead')}</span></div>
+        <div class="coach-open">${c.opening}</div>
+        <div class="coach-block">
+          <div class="coach-block-title">Ask</div>
+          ${c.questions.map(q => `<div class="coach-q">${q}</div>`).join('')}
+        </div>
+        <div class="coach-next">→ ${c.next}</div>
+        ${tipsHtml}
+      </div>`;
+    })()}
+
+    <!-- SERVICES -->
+    ${p.services?.length ? `<div class="hud-section">
+      <div class="hud-section-title">Services Targeted</div>
+      <div class="hud-chip-row">${p.services.map(s => `<span class="hud-chip">${s}</span>`).join('')}</div>
+    </div>` : ''}
+
+    <!-- NOTES -->
+    ${p.notes ? `<div class="hud-section">
+      <div class="hud-section-title">Notes</div>
+      <div class="hud-note-box">${p.notes}</div>
+    </div>` : ''}
+
+    <!-- JOB VALUE -->
+    <div class="hud-section">
+      <div class="hud-section-title">Job Value</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input class="inp" id="est-job-value" value="${p.job_value || ''}" placeholder="e.g. $750–$1,100" style="flex:1">
+        <button onclick="saveJobValue()" style="padding:11px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">Save</button>
+      </div>
+    </div>
+
+    <!-- LAST VISIT -->
+    <div class="hud-section" id="visits-section">
+      <div class="hud-section-title">Last Visit</div>
+      <div id="visits-content">${lastVisitHtml}</div>
+    </div>
+    <div style="height:24px"></div>
+  `;
+}
+
+async function showAllVisits() {
+  const v = await loadVisits(currentProspect.id);
+  const cont = document.getElementById('visits-section');
+  cont.innerHTML = `<div class="hud-section-title">All Visits (${v.length})</div>` +
+    v.map(visit => `<div class="visit-card" style="margin:0 0 10px;box-shadow:var(--shadow)">
+      <div class="visit-date">${formatDate(visit.visited_at)}</div>
+      <div class="visit-badges">
+        ${visit.homeowner_present ? `<span class="badge badge-blue">${visit.homeowner_present}</span>` : ''}
+        ${visit.visit_type ? `<span class="badge">${visit.visit_type}</span>` : ''}
+        ${visit.roof_condition ? `<span class="badge">${visit.roof_condition}</span>` : ''}
+        ${visit.interest_level ? `<span class="badge ${visit.interest_level.includes('Hot') ? 'badge-orange' : ''}">${visit.interest_level}</span>` : ''}
+      </div>
+      ${visit.notes ? `<div class="visit-notes-text">${visit.notes}</div>` : ''}
+    </div>`).join('');
+}
+
+// ── STAGE / ESTIMATE ──────────────────────────────────────────────────────────
+async function updateStage(val) {
+  const { error } = await sb.from('prospects').update({ stage: val }).eq('id', currentProspect.id);
+  if (error) { showToast('Error updating stage'); return; }
+  currentProspect.stage = val;
+  const idx = prospects.findIndex(p => p.id === currentProspect.id);
+  if (idx !== -1) prospects[idx].stage = val;
+  updateStats();
+  showToast('Stage updated ✓');
+}
+
+async function saveJobValue() {
+  const val = document.getElementById('est-job-value')?.value?.trim();
+  if (!val) return;
+  const { error } = await sb.from('prospects').update({ job_value: val }).eq('id', currentProspect.id);
+  if (error) { showToast('Error saving'); return; }
+  currentProspect.job_value = val;
+  showToast('Saved ✓');
+}
+
+// ── CHECK-IN ─────────────────────────────────────────────────────────────────
+function showCheckin() {
+  document.getElementById('checkin-title').textContent = 'Log Visit — ' + ((currentProspect?.owner_name || '').split(' ')[0] || 'Prospect');
+  document.getElementById('checkin-sheet').classList.add('show');
+}
+function closeCheckinSheet() { document.getElementById('checkin-sheet').classList.remove('show'); }
+
+function selectOption(el, group) {
+  el.closest('.option-grid').querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function saveVisit() {
+  const p = currentProspect;
+  const getOpt = (cls) => {
+    const sel = document.querySelector(`#checkin-sheet .option-btn.selected[onclick*="${cls}"]`);
+    return sel ? sel.textContent.trim() : null;
+  };
+  const visitData = {
+    prospect_id: p.id,
+    visited_at: new Date().toISOString(),
+    homeowner_present: getOpt('present'),
+    visit_type: getOpt('vtype'),
+    roof_condition: getOpt('roof'),
+    interest_level: getOpt('interest'),
+    notes: document.getElementById('visit-notes').value.trim(),
+    created_by: currentUser?.id
+  };
+  const { error } = await sb.from('visits').insert(visitData);
+  if (error) { showToast('Error saving visit'); return; }
+  visits[p.id] = null; // clear cache
+  closeCheckinSheet();
+  document.getElementById('visit-notes').value = '';
+  document.querySelectorAll('#checkin-sheet .option-btn').forEach(b => b.classList.remove('selected'));
+  showToast('Visit logged ✓');
+  await renderHUD();
+}
+
+// ── ADD / EDIT ────────────────────────────────────────────────────────────────
+function showAddProspect() {
+  ['add-sheet-title','edit-prospect-id','f-address','f-city','f-zip','f-sqft','f-year','f-value','f-owner','f-phone','f-email','f-score','f-next','f-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'add-sheet-title') el.textContent = 'Add Prospect';
+    else if (id === 'f-city') el.value = 'Eustis';
+    else if (id === 'f-zip') el.value = '32726';
+    else el.value = '';
+  });
+  document.querySelectorAll('#f-stage-row .radio-chip').forEach((c,i) => c.classList.toggle('selected', i===0));
+  document.querySelectorAll('#f-services-row .radio-chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('add-sheet').classList.add('show');
+}
+
+function showEditProspect() {
+  const p = currentProspect;
+  document.getElementById('add-sheet-title').textContent = 'Edit Prospect';
+  document.getElementById('edit-prospect-id').value = p.id;
+  document.getElementById('f-address').value = p.address || '';
+  document.getElementById('f-city').value = p.city || '';
+  document.getElementById('f-zip').value = p.zip || '';
+  document.getElementById('f-sqft').value = p.sqft || '';
+  document.getElementById('f-year').value = p.year_built || '';
+  document.getElementById('f-value').value = p.value || '';
+  document.getElementById('f-owner').value = p.owner_name || '';
+  document.getElementById('f-phone').value = p.owner_phone || '';
+  document.getElementById('f-email').value = p.owner_email || '';
+  document.getElementById('f-score').value = p.score || '';
+  document.getElementById('f-next').value = p.next_action || '';
+  document.getElementById('f-notes').value = p.notes || '';
+  const stage = (p.stage || 'lead').toLowerCase();
+  document.querySelectorAll('#f-stage-row .radio-chip').forEach(c => c.classList.toggle('selected', c.textContent.toLowerCase() === stage));
+  const svcs = p.services || [];
+  document.querySelectorAll('#f-services-row .radio-chip').forEach(c => c.classList.toggle('selected', svcs.includes(c.textContent)));
+  document.getElementById('add-sheet').classList.add('show');
+}
+
+function closeAddSheet() { document.getElementById('add-sheet').classList.remove('show'); }
+function selectChip(el, group) {
+  el.closest(`#f-${group}-row`).querySelectorAll('.radio-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function toggleChip(el) { el.classList.toggle('selected'); }
+
+async function saveProspect() {
+  const address = document.getElementById('f-address').value.trim();
+  if (!address) { showToast('Address is required'); return; }
+  const stageEl = document.querySelector('#f-stage-row .radio-chip.selected');
+  const services = [...document.querySelectorAll('#f-services-row .radio-chip.selected')].map(c => c.textContent);
+  const data = {
+    address,
+    city: document.getElementById('f-city').value.trim() || null,
+    zip: document.getElementById('f-zip').value.trim() || null,
+    sqft: parseInt(document.getElementById('f-sqft').value) || null,
+    year_built: parseInt(document.getElementById('f-year').value) || null,
+    value: document.getElementById('f-value').value.trim() || null,
+    owner_name: document.getElementById('f-owner').value.trim() || null,
+    owner_phone: document.getElementById('f-phone').value.trim() || null,
+    owner_email: document.getElementById('f-email').value.trim() || null,
+    stage: stageEl ? stageEl.textContent.toLowerCase() : 'lead',
+    score: parseInt(document.getElementById('f-score').value) || null,
+    services: services.length ? services : null,
+    next_action: document.getElementById('f-next').value.trim() || null,
+    notes: document.getElementById('f-notes').value.trim() || null,
+    source: 'Manual Entry',
+    created_by: currentUser?.id
+  };
+  const editId = document.getElementById('edit-prospect-id').value;
+  let error;
+  if (editId) {
+    ({ error } = await sb.from('prospects').update(data).eq('id', editId));
+  } else {
+    ({ error } = await sb.from('prospects').insert(data));
+  }
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeAddSheet();
+  await loadProspects(true);
+  showToast(editId ? 'Updated ✓' : 'Prospect added ✓');
+  if (editId && currentProspect?.id == editId) {
+    currentProspect = prospects.find(p => p.id == editId);
+    await renderHUD();
+  }
+}
+
+// ── NEARBY ────────────────────────────────────────────────────────────────────
+function populateJobSelect() {
+  const sel = document.getElementById('nearby-job-select');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— not on a job —</option>';
+  prospects.filter(p => p.address && p.address !== 'TBD').forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = (p.address || '') + (p.city ? ', ' + p.city : '');
+    sel.appendChild(opt);
+  });
+  sel.value = current;
+}
+
+function getApproachReason(p, distMi, jobProspect) {
+  const roofAge = p.year_built ? (YEAR_NOW - p.year_built) : null;
+  const stage = p.stage || 'lead';
+
+  if (stage === 'won') {
+    return { icon: '⭐', reason: 'Past client', detail: 'Check in, offer seasonal add-on, or ask for a referral.' };
+  }
+  if (stage === 'estimate') {
+    return { icon: '📄', reason: 'Estimate pending', detail: 'You gave them a quote — follow up while you\'re nearby.' };
+  }
+  if (stage === 'follow-up') {
+    return { icon: '🔄', reason: 'Due for follow-up', detail: 'Already in contact — you\'re nearby, great time to close.' };
+  }
+  if (jobProspect && distMi < 0.15) {
+    return { icon: '💧', reason: 'Right next door', detail: `Working at ${jobProspect.address} — let them know you're here to serve even if spray or runoff reaches their property.` };
+  }
+  if (jobProspect && distMi < 0.4) {
+    return { icon: '🏘️', reason: 'Same street / block', detail: `Equipment is set up at ${jobProspect.address}. Setup cost is already covered — great time to offer a batch discount.` };
+  }
+  if (roofAge !== null && roofAge >= 15) {
+    return { icon: '⚠️', reason: `${roofAge}-yr-old roof`, detail: 'Older roofs often have moss and algae. Noticed from the street while working nearby.' };
+  }
+  if (p.services?.includes('Driveway') || p.services?.includes('Deck/Patio')) {
+    return { icon: '🧹', reason: 'Surface wash target', detail: 'Marked for driveway or deck service — you\'re already in the area today.' };
+  }
+  return { icon: '👋', reason: 'In the neighborhood', detail: 'Introduce Blue Lake — you\'re already set up nearby and can offer a no-obligation walkthrough.' };
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 3958.8; // miles
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function renderNearby() {
+  const jobId = document.getElementById('nearby-job-select').value;
+  const jobProspect = jobId ? prospects.find(p => p.id == jobId) : null;
+  const container = document.getElementById('nearby-list');
+
+  // Determine origin (job location or user GPS)
+  let originLat = userLat, originLng = userLng;
+  if (jobProspect) {
+    const addr = `${jobProspect.address}, ${jobProspect.city || 'Eustis'}, FL ${jobProspect.zip || '32726'}`;
+    const coords = geocodeCache[addr];
+    if (coords) { originLat = coords[0]; originLng = coords[1]; }
+  }
+
+  if (originLat === null) {
+    container.innerHTML = `<div class="nearby-empty"><div class="nearby-empty-icon">📍</div><div class="nearby-empty-text">Getting your location…</div><div class="nearby-empty-sub">Allow location access or select a job above</div></div>`;
+    return;
+  }
+
+  // Build list with distances
+  const nearby = [];
+  prospects.forEach(p => {
+    if (!p.address || p.address === 'TBD') return;
+    if (jobProspect && p.id === jobProspect.id) return; // skip current job
+    const addr = `${p.address}, ${p.city || 'Eustis'}, FL ${p.zip || '32726'}`;
+    const coords = geocodeCache[addr];
+    if (!coords) return;
+    const dist = haversine(originLat, originLng, coords[0], coords[1]);
+    if (dist <= 1.5) nearby.push({ p, dist });
+  });
+
+  nearby.sort((a, b) => a.dist - b.dist);
+
+  if (nearby.length === 0) {
+    const msg = Object.keys(geocodeCache).length === 0
+      ? 'Addresses are geocoding in the background — check back in a minute.'
+      : 'No prospects within 1.5 miles. Addresses still geocoding may not appear yet.';
+    container.innerHTML = `<div class="nearby-empty"><div class="nearby-empty-icon">🏘️</div><div class="nearby-empty-text">No nearby prospects</div><div class="nearby-empty-sub">${msg}</div></div>`;
+    return;
+  }
+
+  container.innerHTML = nearby.slice(0, 15).map(({ p, dist }) => {
+    const sc = p.score >= 8 ? 'score-hot' : p.score >= 6 ? 'score-warm' : 'score-cool';
+    const st = 'stage-' + (p.stage || 'lead').replace(' ', '-');
+    const distStr = dist < 0.1 ? `${Math.round(dist * 5280)} ft` : `${dist.toFixed(2)} mi`;
+    const { icon, reason, detail } = getApproachReason(p, dist, jobProspect);
+    return `<button type="button" class="nearby-card" onclick="openProspect(${p.id})">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span class="nearby-dist">📍 ${distStr}</span>
+        <span class="pc-stage ${st}" style="font-size:11px;padding:2px 8px">${cap(p.stage || 'lead')}</span>
+        <span class="pc-score ${sc}" style="width:28px;height:28px;font-size:12px">${p.score || '–'}</span>
+      </div>
+      <div class="nearby-name">${p.owner_name || 'Unknown Owner'}</div>
+      <div class="nearby-addr">${p.address}${p.city ? ', ' + p.city : ''}</div>
+      <div class="nearby-approach">
+        <span class="nearby-approach-icon">${icon}</span>
+        <div>
+          <div class="nearby-approach-text">${reason}</div>
+          <div class="nearby-approach-detail">${detail}</div>
+        </div>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+// ── GEOCODING (background) ────────────────────────────────────────────────────
+async function backgroundGeocode() {
+  const toCode = prospects.filter(p =>
+    p.address && p.address !== 'TBD' && !p.address.toLowerCase().includes('blue lake estates')
+  );
+  for (const p of toCode) {
+    const addr = `${p.address}, ${p.city || 'Eustis'}, FL ${p.zip || '32726'}`;
+    if (geocodeCache[addr]) continue;
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const json = await res.json();
+      if (json[0]) {
+        geocodeCache[addr] = [parseFloat(json[0].lat), parseFloat(json[0].lon)];
+        try { localStorage.setItem('bl_geocache', JSON.stringify(geocodeCache)); } catch(e) {}
+      }
+    } catch(e) {}
+    await new Promise(r => setTimeout(r, 600)); // rate limit
+  }
+  // Update geocache count in settings
+  const el = document.getElementById('geocache-count');
+  if (el) el.textContent = Object.keys(geocodeCache).length;
+}
+
+function clearGeoCache() {
+  geocodeCache = {};
+  try { localStorage.removeItem('bl_geocache'); } catch(e) {}
+  document.getElementById('geocache-count').textContent = '0';
+  showToast('Cache cleared');
+}
+
+// ── GEOLOCATION ───────────────────────────────────────────────────────────────
+function startGPS() {
+  if (!navigator.geolocation) {
+    document.getElementById('nearby-gps-status').innerHTML = '<span>📍</span><span>Location not available</span>';
+    return;
+  }
+  navigator.geolocation.watchPosition(pos => {
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+    const acc = Math.round(pos.coords.accuracy);
+    document.getElementById('nearby-gps-status').innerHTML = `<span>📍</span><span>Located ±${acc}m</span>`;
+    // Re-render if nearby is active
+    if (document.getElementById('screen-nearby').style.display !== 'none') renderNearby();
+  }, () => {
+    document.getElementById('nearby-gps-status').innerHTML = '<span>📍</span><span>Location denied — select a job above</span>';
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function showScreen(name, navEl) {
+  ['home','nearby','settings'].forEach(s => {
+    document.getElementById('screen-' + s).style.display = 'none';
+  });
+  document.getElementById('screen-' + name).style.display = 'flex';
+  if (navEl) {
+    document.querySelectorAll('#screen-' + name + ' .nav-item').forEach(n => n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
+  if (name === 'nearby') {
+    startGPS();
+    renderNearby();
+  }
+  if (name === 'settings') {
+    document.getElementById('settings-email').textContent = currentUser?.email || '—';
+    document.getElementById('geocache-count').textContent = Object.keys(geocodeCache).length;
+    loadProfileName();
+  }
+}
+
+function showScreenRaw(name) {
+  ['home','nearby','settings','detail'].forEach(s => {
+    const el = document.getElementById('screen-' + s);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('screen-' + name).style.display = 'flex';
+}
+
+function backToList() {
+  showScreenRaw('home');
+  currentProspect = null;
+}
+
+async function loadProfileName() {
+  if (!currentUser) return;
+  const { data } = await sb.from('profiles').select('full_name').eq('id', currentUser.id).single();
+  const name = data?.full_name || currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Team';
+  document.getElementById('settings-name').textContent = name;
+}
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function callPhone(p)  { window.location.href = 'tel:' + p.replace(/\D/g,''); }
+function textPhone(p)  { window.location.href = 'sms:' + p.replace(/\D/g,''); }
+function navTo(addr)   { window.open('https://maps.google.com/?q=' + encodeURIComponent(addr), '_blank'); }
+function cap(s)        { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' });
+}
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+document.querySelectorAll('.sheet-overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('show'); });
+});
+</script>
+</body>
+</html>
