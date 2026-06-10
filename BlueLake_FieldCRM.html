@@ -569,7 +569,7 @@ function renderProspects() {
   container.innerHTML = list.map(p => {
     const sc = p.score >= 8 ? 'score-hot' : p.score >= 6 ? 'score-warm' : 'score-cool';
     const st = 'stage-' + (p.stage || 'lead').replace(' ', '-');
-    return `<button type="button" class="prospect-card" onclick="openProspect(${p.id})">
+    return `<button type="button" class="prospect-card" onclick="openProspect('${p.id}')">
       <div class="pc-header">
         <div class="pc-score ${sc}">${p.score || '–'}</div>
         <div class="pc-info">
@@ -1040,7 +1040,7 @@ function renderNearby() {
     const st = 'stage-' + (p.stage || 'lead').replace(' ', '-');
     const distStr = dist < 0.1 ? `${Math.round(dist * 5280)} ft` : `${dist.toFixed(2)} mi`;
     const { icon, reason, detail } = getApproachReason(p, dist, jobProspect);
-    return `<button type="button" class="nearby-card" onclick="openProspect(${p.id})">
+    return `<button type="button" class="nearby-card" onclick="openProspect('${p.id}')">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
         <span class="nearby-dist">📍 ${distStr}</span>
         <span class="pc-stage ${st}" style="font-size:11px;padding:2px 8px">${cap(p.stage || 'lead')}</span>
