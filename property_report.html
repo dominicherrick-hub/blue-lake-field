@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Lake CRM — 367 Blue Branch St</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+  .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 17px; font-weight: 700; }
+  .header .sub { font-size: 12px; opacity: 0.78; margin-top: 2px; }
+  .header .meta { font-size: 11px; opacity: 0.7; text-align: right; }
+  .container { max-width: 860px; margin: 14px auto; padding: 0 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { background: white; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .card.full { grid-column: 1 / -1; }
+  .card h2 { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
+  .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+  .kv-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .kv label { display: block; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1px; }
+  .kv span { font-size: 13px; font-weight: 600; color: #1e293b; }
+  .kv span.dim { font-weight: 400; color: #64748b; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 9px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .level-badge { display: inline-block; background: #ef4444; color: white; padding: 4px 13px; border-radius: 14px; font-weight: 700; font-size: 13px; margin-right: 8px; }
+  .visual-box { border-radius: 7px; padding: 9px 12px; font-size: 12px; line-height: 1.5; margin-top: 8px; }
+  .visual-clean { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+  .visual-warn { background: #fffbeb; border: 1px solid #fde68a; color: #713f12; }
+  .visual-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .onsite-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f8fafc; font-size: 12px; }
+  .onsite-row:last-child { border-bottom: none; }
+  .onsite-row .label { font-weight: 600; width: 130px; flex-shrink: 0; }
+  .onsite-row .note { color: #64748b; }
+  .permit-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 9px; background: #f8fafc; border-radius: 6px; font-size: 12px; margin-bottom: 5px; }
+  .permit-num { font-weight: 700; color: #1e40af; width: 80px; }
+  .permit-desc { flex: 1; color: #475569; padding: 0 8px; }
+  .ptag { display: inline-block; padding: 1px 7px; border-radius: 7px; font-size: 11px; font-weight: 600; }
+  .ptag-mech { background: #fef3c7; color: #92400e; }
+  .ptag-done { background: #dcfce7; color: #166534; }
+  .no-roof { color: #ef4444; font-weight: 700; font-size: 12px; margin-top: 6px; }
+  .upsell { display: flex; flex-wrap: wrap; gap: 6px; }
+  .utag { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 11px; border-radius: 7px; font-size: 12px; font-weight: 500; }
+  .utag.pressure { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+  .utag.windows { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
+  .utag.lights { background: #fef9c3; color: #713f12; border-color: #fde047; }
+  .links { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 10px; }
+  .link-btn { display: inline-block; text-decoration: none; padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 600; color: white; }
+  .link-btn.blue { background: #1e40af; }
+  .link-btn.slate { background: #475569; }
+  .link-btn.green { background: #15803d; }
+  .divider { border: none; border-top: 1px solid #f1f5f9; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🏠 367 Blue Branch St, Eustis FL 32736</h1>
+    <div class="sub">Roe, Christopher &amp; Susan M &nbsp;·&nbsp; <span class="badge badge-green">Owner-Occupied</span> &nbsp;·&nbsp; 2-story · 5BD/2.5BA · Built 2005</div>
+  </div>
+  <div class="meta">Blue Lake CRM &nbsp;·&nbsp; June 6, 2026<br><span style="opacity:0.6">Practice Run 2</span></div>
+</div>
+
+<div class="container">
+
+  <!-- Property Sizing -->
+  <div class="card">
+    <h2>Property Sizing</h2>
+    <div class="kv-grid three">
+      <div class="kv"><label>Living Area</label><span>4,084 sq ft</span></div>
+      <div class="kv"><label>Market Value</label><span>$498,713</span></div>
+      <div class="kv"><label>Wall Type</label><span>Brick/Block Stucco</span></div>
+      <div class="kv"><label>Ext. Wall Area</label><span>~3,400–4,000 sq ft <span class="dim">(est.)</span></span></div>
+      <div class="kv"><label>Perimeter</label><span>~230 linear ft <span class="dim">(est.)</span></span></div>
+      <div class="kv"><label>Windows</label><span>~20–28 <span class="dim">(on-site)</span></span></div>
+      <div class="kv"><label>Roof Footprint</label><span>~2,100 sq ft <span class="dim">(est.)</span></span></div>
+      <div class="kv"><label>Roof Surface</label><span>~2,500–2,800 sq ft <span class="dim">(pitch TBD)</span></span></div>
+      <div class="kv"><label>Driveway</label><span>Concrete, circular <span class="dim">(imagery)</span></span></div>
+    </div>
+    <div class="visual-info" style="margin-top:10px;font-size:11px;">Wall &amp; roof figures estimated from floor plan sketch + footprint. Confirm measurements on-site for final quote.</div>
+  </div>
+
+  <!-- Roof + Visual Intel -->
+  <div class="card">
+    <h2>Roof Intelligence</h2>
+    <div style="display:flex;align-items:center;margin-bottom:6px;">
+      <span class="level-badge">Level 4 — Call Today</span>
+      <span style="font-size:12px;color:#64748b;">21-yr original roof · no permit ever</span>
+    </div>
+    <div class="visual-box visual-clean">
+      <strong>🛰️ EagleView (Jan 2026):</strong> Roof appears uniformly gray — no dark streaking visible. Walls look clean too. <strong>Possible recent cleaning.</strong> Confirm on-site before leading with roof pitch.
+    </div>
+    <div class="visual-box visual-warn" style="margin-top:6px;">
+      <strong>⚠️ Note:</strong> Level 4 is based on permit age only, not visual evidence. If they had it washed in the past year, adjust pitch to maintenance/frequency angle instead.
+    </div>
+  </div>
+
+  <!-- On-Site Checklist -->
+  <div class="card">
+    <h2>On-Site Verification Checklist</h2>
+    <div class="onsite-row"><span class="label">🪟 Windows</span><span class="note">Count all — est. 20–28. Note screens, storm, or specialty glass.</span></div>
+    <div class="onsite-row"><span class="label">🌿 Gutters</span><span class="note">Downspout visible from imagery — check for clogs, overflow staining, debris.</span></div>
+    <div class="onsite-row"><span class="label">🚗 Driveway</span><span class="note">Large concrete + circular feature. Check for mildew, tire marks, moss near edges.</span></div>
+    <div class="onsite-row"><span class="label">🛤️ Sidewalks</span><span class="note">Front walkway + street sidewalk — assess staining, moss.</span></div>
+    <div class="onsite-row"><span class="label">🏠 Walls</span><span class="note">Stucco — look for green algae at base, shadowed north/west faces.</span></div>
+    <div class="onsite-row"><span class="label">🔺 Roof</span><span class="note">Confirm algae / streaking presence before quoting roof wash.</span></div>
+  </div>
+
+  <!-- Permits -->
+  <div class="card">
+    <h2>Permit History — City of Eustis</h2>
+    <div class="permit-row">
+      <span class="permit-num">#24-00528</span>
+      <span class="permit-desc">HVAC change-out, 4-ton (issued Mar 2025)</span>
+      <span class="ptag ptag-mech">Mechanical</span>
+    </div>
+    <div class="permit-row">
+      <span class="permit-num">#22-01610</span>
+      <span class="permit-desc">Mechanical (Oct 2022)</span>
+      <span class="ptag ptag-done">Complete</span>
+    </div>
+    <div class="permit-row">
+      <span class="permit-num">#15-01570</span>
+      <span class="permit-desc">Legacy (Nov 2015)</span>
+      <span class="ptag ptag-done">Complete</span>
+    </div>
+    <p class="no-roof">⚠️ No roofing permit — original 2005 roof unconfirmed clean.</p>
+    <p style="font-size:11px;color:#64748b;margin-top:3px;">Active homeowner: HVAC replaced 2024. Invests in the home.</p>
+  </div>
+
+  <!-- Upsells + Links -->
+  <div class="card full">
+    <h2>Service Opportunities</h2>
+    <div class="upsell">
+      <div class="utag">🏠 House Wash — walls ~3,400–4,000 sq ft · est. $850–$1,800</div>
+      <div class="utag pressure">🚿 Roof Wash — ~2,500–2,800 sq ft surface · est. $875–$1,400</div>
+      <div class="utag pressure">🚗 Driveway + Sidewalk — concrete, large · est. $150–$350</div>
+      <div class="utag windows">🪟 Window Washing — 2-story, ~20–28 windows</div>
+      <div class="utag lights">🎄 Christmas Lights</div>
+      <div class="utag">📋 Insurance Conversation (21-yr roof)</div>
+      <div class="utag">🔁 Referral (5BR family, well-kept home)</div>
+    </div>
+    <hr class="divider">
+    <h2>Quick Links — open in browser</h2>
+    <div class="links">
+      <a href="https://gis.lakecountyfl.gov/gisweb/EagleView?address=367+Blue+Branch+St+Eustis+FL" target="_blank" class="link-btn blue">🛰️ EagleView</a>
+      <a href="https://lakecopropappr.com/property-details.aspx?AltKey=3829418" target="_blank" class="link-btn slate">🏛️ Property Appraiser</a>
+      <a href="https://app.govwell.com/eustis/public-records/67d19e3e-1422-419e-a82a-ec296e20124d" target="_blank" class="link-btn green">📋 GovWell Permits</a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
