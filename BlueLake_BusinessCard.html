@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Blue Lake Services – Business Card</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #e8edf2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Georgia', serif;
+    padding: 40px 20px;
+  }
+
+  h2 {
+    font-family: Arial, sans-serif;
+    color: #444;
+    margin-bottom: 24px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── Card wrapper: 3.5" × 2" at 96dpi ── */
+  .card-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    align-items: center;
+  }
+
+  .card {
+    width: 3.5in;
+    height: 2in;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    position: relative;
+    display: flex;
+  }
+
+  /* ── FRONT ── */
+  .front {
+    background: linear-gradient(135deg, #0a2a4a 0%, #0d3d6e 55%, #1565a8 100%);
+    color: #fff;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 18px 20px 14px 20px;
+  }
+
+  .front::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 18px,
+      rgba(255,255,255,0.025) 18px,
+      rgba(255,255,255,0.025) 19px
+    );
+    pointer-events: none;
+  }
+
+  .front-top {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .company-name {
+    font-size: 15.5px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    letter-spacing: 0.5px;
+    color: #fff;
+    line-height: 1.2;
+  }
+
+  .tagline {
+    font-size: 7.5px;
+    color: #7ec8f4;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 3px;
+    font-family: Arial, sans-serif;
+  }
+
+  .divider {
+    width: 36px;
+    height: 2px;
+    background: #4fa3e0;
+    margin: 8px 0;
+    border-radius: 1px;
+  }
+
+  .person-name {
+    font-size: 13px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    color: #fff;
+  }
+
+  .person-title {
+    font-size: 8px;
+    color: #a8d4f5;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-family: Arial, sans-serif;
+    margin-top: 1px;
+  }
+
+  .front-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .contact-block {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .contact-item {
+    font-size: 7.5px;
+    color: #cce6fa;
+    font-family: Arial, sans-serif;
+    letter-spacing: 0.3px;
+  }
+
+  .contact-item span {
+    color: #7ec8f4;
+    font-weight: bold;
+    margin-right: 3px;
+  }
+
+  .qr-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .qr-box img {
+    width: 54px;
+    height: 54px;
+    border-radius: 3px;
+    display: block;
+    background: white;
+  }
+
+  .qr-label {
+    font-size: 5.5px;
+    color: #7ec8f4;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: Arial, sans-serif;
+  }
+
+
+  /* Print styles */
+  @media print {
+    body { background: white; padding: 0; }
+    h2 { display: none; }
+    .card-wrapper { gap: 0.25in; }
+    .card { box-shadow: none; border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<h2>Blue Lake Services — Business Card Preview (3.5" × 2")</h2>
+
+<div class="card-wrapper">
+
+  <div>
+    <div class="card front">
+      <div class="front-top">
+        <div class="company-name">Blue Lake Services, LLC</div>
+        <div class="tagline">Pressure · Soft Wash · Windows</div>
+        <div class="divider"></div>
+        <div class="person-name">Chris Herrick</div>
+        <div class="person-title">Owner</div>
+      </div>
+      <div class="front-bottom">
+        <div class="contact-block">
+          <div class="contact-item"><span>P</span>(352) 729-1078</div>
+          <div class="contact-item"><span>E</span>contact@bluelakeserv.com</div>
+        </div>
+        <div class="qr-box">
+          <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=108x108&data=https%3A%2F%2Fstartling-platypus-3d216a.netlify.app%2F&color=0a2a4a&bgcolor=ffffff&margin=2"
+            alt="QR Code"
+          >
+          <div class="qr-label">Scan for website</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+
+
+</body>
+</html>
