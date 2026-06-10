@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Lake Services — CRM</title>
+<style>
+  :root {
+    --blue: #1a6eb5;
+    --blue-light: #e8f2fb;
+    --green: #1a7a4a;
+    --green-light: #e6f5ed;
+    --orange: #c45e00;
+    --orange-light: #fff0e0;
+    --red: #b52020;
+    --red-light: #fdeaea;
+    --gray: #6b7280;
+    --gray-light: #f3f4f6;
+    --border: #d1d5db;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --white: #ffffff;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: var(--text); background: #f0f4f8; }
+
+  /* Header */
+  .header { background: var(--blue); color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+  .header-stats { display: flex; gap: 20px; text-align: center; }
+  .stat-val { font-size: 22px; font-weight: 700; }
+  .stat-lbl { font-size: 11px; opacity: 0.8; }
+
+  /* Tabs */
+  .tabs { background: white; border-bottom: 2px solid var(--border); display: flex; padding: 0 24px; }
+  .tab { padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; white-space: nowrap; }
+  .tab:hover { color: var(--blue); }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .tab-count { display: inline-block; background: var(--gray-light); color: var(--gray); font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+  .tab.active .tab-count { background: var(--blue-light); color: var(--blue); }
+
+  /* Toolbar */
+  .toolbar { background: white; padding: 12px 24px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--border); }
+  .search-wrap { position: relative; flex: 1; max-width: 320px; }
+  .search-wrap input { width: 100%; padding: 7px 12px 7px 32px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; }
+  .search-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,110,181,0.12); }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray); font-size: 14px; }
+  select.filter { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text); outline: none; cursor: pointer; background: white; }
+  select.filter:focus { border-color: var(--blue); }
+  .btn { padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: background 0.15s; }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: #155fa0; }
+  .btn-secondary { background: var(--gray-light); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: #e5e7eb; }
+  .ml-auto { margin-left: auto; }
+
+  /* Table */
+  .table-wrap { padding: 16px 24px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+  thead { background: var(--gray-light); }
+  th { padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; white-space: nowrap; user-select: none; }
+  th:hover { color: var(--blue); }
+  th .sort-icon { opacity: 0.4; margin-left: 4px; }
+  td { padding: 12px 14px; border-top: 1px solid var(--border); vertical-align: top; }
+  tr:hover td { background: var(--blue-light); }
+  tr.selected td { background: #dbeafe; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-hot { background: #fee2e2; color: #b91c1c; }
+  .badge-warm { background: #fef3c7; color: #92400e; }
+  .badge-cold { background: #e0f2fe; color: #0369a1; }
+  .badge-active { background: var(--green-light); color: var(--green); }
+  .badge-past { background: var(--gray-light); color: var(--gray); }
+  .badge-hoa { background: #f3e8ff; color: #6d28d9; }
+  .badge-new { background: #fce7f3; color: #9d174d; }
+  .badge-quoted { background: #fff7ed; color: #c2410c; }
+  .badge-follow { background: #ecfdf5; color: #065f46; }
+  .badge-closed { background: var(--green-light); color: var(--green); }
+  .badge-lost { background: #f1f5f9; color: #64748b; }
+
+  /* Lead score */
+  .score-bar { width: 60px; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .score-fill { height: 100%; border-radius: 3px; }
+  .score-text { font-size: 12px; font-weight: 600; }
+
+  /* Contact cell */
+  .contact-name { font-weight: 600; color: var(--text); }
+  .contact-addr { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .contact-phone { font-size: 12px; color: var(--blue); margin-top: 2px; }
+
+  /* Services */
+  .svc-tag { display: inline-block; background: var(--blue-light); color: var(--blue); font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin: 1px 2px 1px 0; }
+
+  /* Notes */
+  .notes-text { font-size: 12px; color: var(--text-muted); max-width: 220px; white-space: pre-wrap; }
+
+  /* Actions */
+  .row-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s; }
+  tr:hover .row-actions { opacity: 1; }
+  .action-btn { padding: 4px 8px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border); background: white; cursor: pointer; color: var(--text); }
+  .action-btn:hover { background: var(--gray-light); }
+  .action-btn.danger { color: var(--red); border-color: #fca5a5; }
+  .action-btn.danger:hover { background: var(--red-light); }
+
+  /* Detail panel */
+  .detail-panel { display: none; position: fixed; right: 0; top: 0; bottom: 0; width: 380px; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.12); z-index: 100; overflow-y: auto; }
+  .detail-panel.open { display: block; }
+  .detail-header { background: var(--blue); color: white; padding: 20px; }
+  .detail-header h2 { font-size: 17px; font-weight: 700; }
+  .detail-header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .detail-close { float: right; background: none; border: none; color: white; font-size: 20px; cursor: pointer; margin-top: -4px; }
+  .detail-body { padding: 20px; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section h3 { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .detail-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+  .detail-row label { color: var(--text-muted); }
+  .detail-row value { font-weight: 500; text-align: right; }
+  .detail-link { color: var(--blue); text-decoration: none; font-size: 13px; }
+  .detail-link:hover { text-decoration: underline; }
+  .next-action { background: var(--orange-light); border: 1px solid #fed7aa; border-radius: 6px; padding: 10px; font-size: 13px; color: var(--orange); font-weight: 500; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 10px; width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h2 { font-size: 17px; font-weight: 700; }
+  .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--gray); }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+  .form-group input, .form-group select, .form-group textarea { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit; outline: none; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,110,181,0.12); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-section-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 18px 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty h3 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+
+  /* Section header rows */
+  tr.section-divider td { background: var(--gray-light); font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 14px; border-top: none; }
+
+  .hidden { display: none !important; }
+  .tag-rental { background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
+  .tag-hoa-flag { background: #f3e8ff; color: #6d28d9; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <h1>💧 Blue Lake Services — CRM</h1>
+    <div class="header-sub">Eustis, FL · Lake County</div>
+  </div>
+  <div class="header-stats">
+    <div><div class="stat-val" id="stat-prospects">0</div><div class="stat-lbl">Prospects</div></div>
+    <div><div class="stat-val" id="stat-clients">0</div><div class="stat-lbl">Clients</div></div>
+    <div><div class="stat-val" id="stat-past">0</div><div class="stat-lbl">Past</div></div>
+    <div><div class="stat-val" id="stat-hoa">0</div><div class="stat-lbl">HOA/PM</div></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" data-tab="prospects">Prospects <span class="tab-count" id="tc-prospects">0</span></div>
+  <div class="tab" data-tab="clients">Clients <span class="tab-count" id="tc-clients">0</span></div>
+  <div class="tab" data-tab="past">Past Clients <span class="tab-count" id="tc-past">0</span></div>
+  <div class="tab" data-tab="hoa">HOA / Property Mgrs <span class="tab-count" id="tc-hoa">0</span></div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-input" placeholder="Search name, address, notes…" oninput="applyFilters()">
+  </div>
+  <select class="filter" id="filter-status" onchange="applyFilters()">
+    <option value="">All Statuses</option>
+    <option value="New">New</option>
+    <option value="Quoted">Quoted</option>
+    <option value="Follow-Up">Follow-Up</option>
+    <option value="Closed Won">Closed Won</option>
+    <option value="Closed Lost">Closed Lost</option>
+    <option value="Active">Active</option>
+  </select>
+  <select class="filter" id="filter-service" onchange="applyFilters()">
+    <option value="">All Services</option>
+    <option value="Soft Wash">Soft Wash</option>
+    <option value="Roof Wash">Roof Wash</option>
+    <option value="Pressure Wash">Pressure Wash</option>
+    <option value="Window Cleaning">Window Cleaning</option>
+    <option value="Christmas Lighting">Christmas Lighting</option>
+  </select>
+  <button class="btn btn-primary ml-auto" onclick="openAddModal()">+ Add Contact</button>
+</div>
+
+<!-- TABLE CONTAINER -->
+<div class="table-wrap">
+  <table id="crm-table">
+    <thead>
+      <tr>
+        <th onclick="sortTable('name')">Name <span class="sort-icon">↕</span></th>
+        <th onclick="sortTable('address')">Address <span class="sort-icon">↕</span></th>
+        <th onclick="sortTable('score')">Lead Score <span class="sort-icon">↕</span></th>
+        <th onclick="sortTable('status')">Status <span class="sort-icon">↕</span></th>
+        <th>Services</th>
+        <th onclick="sortTable('sqft')">Sq Ft <span class="sort-icon">↕</span></th>
+        <th onclick="sortTable('roofAge')">Roof Age <span class="sort-icon">↕</span></th>
+        <th>Notes / Next Action</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+  <div id="empty-state" class="empty hidden">
+    <div class="empty-icon">📋</div>
+    <h3>No contacts match your filters</h3>
+    <p>Try adjusting your search or filters</p>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <button class="detail-close" onclick="closeDetail()">×</button>
+    <h2 id="dp-name"></h2>
+    <p id="dp-addr"></p>
+  </div>
+  <div class="detail-body" id="dp-body"></div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Add Contact</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section-title">Contact Info</div>
+      <div class="form-row">
+        <div class="form-group"><label>First Name</label><input id="f-first" type="text"></div>
+        <div class="form-group"><label>Last Name</label><input id="f-last" type="text"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Phone</label><input id="f-phone" type="tel" placeholder="(352) 555-0000"></div>
+        <div class="form-group"><label>Email</label><input id="f-email" type="email"></div>
+      </div>
+      <div class="form-section-title">Property</div>
+      <div class="form-row single">
+        <div class="form-group"><label>Property Address</label><input id="f-addr" type="text" placeholder="123 Blue Lake Dr, Eustis, FL 32726"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Sq Ft (living)</label><input id="f-sqft" type="number" placeholder="2400"></div>
+        <div class="form-group"><label>Year Built</label><input id="f-year" type="number" placeholder="2005"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Stories</label>
+          <select id="f-stories"><option value="">—</option><option>1</option><option>2</option><option>3</option></select>
+        </div>
+        <div class="form-group"><label>Pool?</label>
+          <select id="f-pool"><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Market Value</label><input id="f-value" type="text" placeholder="$400,000"></div>
+        <div class="form-group"><label>Owner-Occupied?</label>
+          <select id="f-occupied"><option value="">—</option><option value="Yes">Yes (Homestead)</option><option value="No">No (Rental)</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>AltKey (Appraiser)</label><input id="f-altkey" type="text" placeholder="3829420"></div>
+        <div class="form-group"><label>HOA Flag</label>
+          <select id="f-hoa"><option value="">None</option><option value="Violation">Violation Found</option><option value="Outreach Sent">Outreach Sent</option><option value="Resolved">Resolved</option></select>
+        </div>
+      </div>
+      <div class="form-section-title">Lead Info</div>
+      <div class="form-row">
+        <div class="form-group"><label>Category</label>
+          <select id="f-cat">
+            <option value="prospects">Prospect</option>
+            <option value="clients">Client</option>
+            <option value="past">Past Client</option>
+            <option value="hoa">HOA / Property Mgr</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Status</label>
+          <select id="f-status">
+            <option>New</option><option>Quoted</option><option>Follow-Up</option>
+            <option>Closed Won</option><option>Closed Lost</option><option>Active</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Lead Score (1–10)</label><input id="f-score" type="number" min="1" max="10" placeholder="7"></div>
+        <div class="form-group"><label>Lead Source</label>
+          <select id="f-source">
+            <option>Neighborhood Scan</option><option>Referral</option><option>Door Knock</option>
+            <option>HOA Meeting</option><option>Google</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Services of Interest</label>
+          <select id="f-services" multiple style="height:80px">
+            <option>Soft Wash</option><option>Roof Wash</option><option>Pressure Wash</option>
+            <option>Window Cleaning</option><option>Christmas Lighting</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Est. Job Value</label><input id="f-jobval" type="text" placeholder="$600–$900"></div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group"><label>Next Action</label><input id="f-next" type="text" placeholder="Call to schedule estimate"></div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group"><label>Notes</label><textarea id="f-notes" placeholder="Key observations, conversations, objections…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+let contacts = [
+  // ── PROSPECTS ──
+  {
+    id: 1, cat: 'prospects',
+    first: 'Patrick & Jennifer', last: 'Evers',
+    phone: '', email: '',
+    address: '359 Blue Branch St, Eustis, FL 32726',
+    sqft: 2468, year: 2006, stories: '1', pool: 'Yes', value: '$396,932',
+    occupied: 'Yes', altkey: '3829420', hoa: '',
+    status: 'New', score: 9, source: 'Neighborhood Scan',
+    services: ['Roof Wash', 'Soft Wash'],
+    jobval: '$750–$1,100',
+    next: 'Door knock — introduce yourself; new owners bought July 2025',
+    notes: 'DARKEST roof in neighborhood. New owner <1yr — likely unaware of roof condition. 19-yr roof, no re-roof permit found. 2-car garage. 1-story w/ pool & screen enclosure. HOT LEAD.'
+  },
+  {
+    id: 2, cat: 'prospects',
+    first: 'Mohammed & Ruhipar', last: 'Zaher',
+    phone: '', email: '',
+    address: '251 Blue Water St, Eustis, FL 32726',
+    sqft: 3614, year: 2007, stories: '2', pool: 'Yes', value: '$484,474',
+    occupied: 'Yes', altkey: '3829451', hoa: '',
+    status: 'New', score: 8, source: 'Neighborhood Scan',
+    services: ['Roof Wash', 'Soft Wash'],
+    jobval: '$1,200–$1,600',
+    next: 'Door knock — 2-story large home, second darkest roof in scan',
+    notes: 'Second darkest roof in Blue Lake Estates scan. 18-yr roof. 2-story 5BD/4BA, pool + screen enclosure. Owned since 2016. Large home = premium job value.'
+  },
+  {
+    id: 3, cat: 'prospects',
+    first: 'John & Christina', last: 'Higgins',
+    phone: '', email: '',
+    address: '363 Blue Branch St, Eustis, FL 32726',
+    sqft: 2428, year: 2006, stories: '1', pool: 'Yes', value: '$406,974',
+    occupied: 'Yes', altkey: '3829419', hoa: '',
+    status: 'New', score: 6, source: 'Neighborhood Scan',
+    services: ['Roof Wash', 'Soft Wash'],
+    jobval: '$700–$1,000',
+    next: 'Door knock — moderate roof candidate, next door to Roe property',
+    notes: 'Moderate roof darkening. 19-yr roof, 1-story, pool + screen enclosure. Owned since 2010. Adjacent to 367 Blue Branch (Roe — practice run property).'
+  },
+  {
+    id: 4, cat: 'prospects',
+    first: 'William & Maria', last: 'Wright',
+    phone: '', email: '',
+    address: '34436 Tiffany Ln, Eustis, FL 32726',
+    sqft: 3647, year: 2003, stories: '1', pool: 'No', value: '$594,228',
+    occupied: 'Yes', altkey: '3737261', hoa: '',
+    status: 'New', score: 8, source: 'Neighborhood Scan',
+    services: ['Roof Wash', 'Soft Wash'],
+    jobval: '$1,000–$1,400',
+    next: 'Door knock — 23-yr roof, no re-roof permit, Park Place on Lake Joanna',
+    notes: 'Dark roof visible in 2025 aerial. 23-yr roof — NO re-roof permit found. 1-story 4BD/3.5BA, no pool. Owned since 2006. Market value $594K — premium property. CRM report: crm_34436_tiffany_ln.html'
+  },
+  {
+    id: 5, cat: 'prospects',
+    first: 'Orville & Janet', last: 'Thompson',
+    phone: '', email: '',
+    address: '34400 Tiffany Ln, Eustis, FL 32726',
+    sqft: 2283, year: 2001, stories: '1', pool: 'No', value: '$431,054',
+    occupied: 'Yes', altkey: '3737237', hoa: '',
+    status: 'New', score: 7, source: 'Neighborhood Scan',
+    services: ['Roof Wash', 'Soft Wash'],
+    jobval: '$700–$1,000',
+    next: 'Door knock — original owners since 2001, 25-yr roof',
+    notes: 'Darker roof in Park Place scan. 25-yr roof — original owners, never sold, likely never washed. 1-story 3BD/2BA. Strong pain-point pitch angle: roof this age could lose warranty/value.'
+  },
+  {
+    id: 6, cat: 'prospects',
+    first: 'Patti', last: '(neighbor)',
+    phone: '', email: '',
+    address: 'Blue Lake Estates (TBD), Eustis, FL',
+    sqft: 0, year: 0, stories: '', pool: '', value: '',
+    occupied: 'Yes', altkey: '', hoa: '',
+    status: 'Follow-Up', score: 9, source: 'Referral',
+    services: ['Soft Wash', 'Pressure Wash'],
+    jobval: '',
+    next: 'Make the ask — rapport already built through boys\' yard work',
+    notes: 'Warmest lead in neighborhood. Connected through prior yard work by the boys. Relationship already established — just need to make the explicit service ask.'
+  },
+  {
+    id: 7, cat: 'prospects',
+    first: 'Rob', last: 'Warren',
+    phone: '', email: '',
+    address: 'Blue Lake Estates (TBD), Eustis, FL',
+    sqft: 0, year: 0, stories: '', pool: '', value: '',
+    occupied: 'Yes', altkey: '', hoa: '',
+    status: 'Follow-Up', score: 8, source: 'Referral',
+    services: ['Soft Wash', 'Pressure Wash', 'Window Cleaning'],
+    jobval: '',
+    next: 'Make the ask — connected through prior pool screen repair work',
+    notes: 'Warm lead. Connected through prior pool screen repair. Good relationship baseline.'
+  },
+  {
+    id: 8, cat: 'prospects',
+    first: 'Susan', last: '(cul-de-sac)',
+    phone: '', email: '',
+    address: 'Blue Lake Estates cul-de-sac (TBD), Eustis, FL',
+    sqft: 0, year: 0, stories: '', pool: '', value: '',
+    occupied: 'Yes', altkey: '', hoa: '',
+    status: 'Follow-Up', score: 7, source: 'Door Knock',
+    services: ['Pressure Wash'],
+    jobval: '',
+    next: 'Follow up — she explicitly asked to be kept in mind for pressure washing',
+    notes: 'Explicitly asked to be kept in mind for pressure washing. Also in cul-de-sac cluster with Joan and Betty.'
+  },
+  {
+    id: 9, cat: 'prospects',
+    first: 'Joan', last: '(neighbor)',
+    phone: '', email: '',
+    address: 'Blue Lake Estates (TBD), Eustis, FL',
+    sqft: 0, year: 0, stories: '', pool: '', value: '',
+    occupied: 'Yes', altkey: '', hoa: '',
+    status: 'New', score: 5, source: 'Door Knock',
+    services: ['Soft Wash', 'Pressure Wash'],
+    jobval: '',
+    next: 'Initial outreach — part of cul-de-sac cluster',
+    notes: 'Part of cul-de-sac group with Betty and Susan. Warm neighborhood connection.'
+  },
+  {
+    id: 10, cat: 'prospects',
+    first: 'Betty', last: '(neighbor)',
+    phone: '', email: '',
+    address: 'Blue Lake Estates (TBD), Eustis, FL',
+    sqft: 0, year: 0, stories: '', pool: '', value: '',
+    occupied: 'Yes', altkey: '', hoa: '',
+    status: 'New', score: 5, source: 'Door Knock',
+    services: ['Soft Wash', 'Pressure Wash'],
+    jobval: '',
+    next: 'Initial outreach — part of cul-de-sac cluster',
+    notes: 'Part of cul-de-sac group. Warm neighborhood connection.'
+  },
+  {
+    id: 11, cat: 'prospects',
+    first: 'Beverly', last: '(neighbor)',
+    phone: '', email: '',
+    address: 'Blue Lake Estates (TBD), Eustis, FL',
+    sqft: 0, year: 0, stories: '', pool: '', value: '',
+    occupied: 'Yes', altkey: '', hoa: '',
+    status: 'New', score: 5, source: 'Door Knock',
+    services: ['Soft Wash'],
+    jobval: '',
+    next: 'Initial outreach',
+    notes: 'Warm neighborhood prospect.'
+  },
+  {
+    id: 12, cat: 'prospects',
+    first: 'Susan', last: '(family friend)',
+    phone: '', email: '',
+    address: 'TBD',
+    sqft: 0, year: 0, stories: '', pool: '', value: '',
+    occupied: 'Yes', altkey: '', hoa: '',
+    status: 'New', score: 6, source: 'Referral',
+    services: ['Soft Wash', 'Window Cleaning'],
+    jobval: '',
+    next: 'Reach out — close family friend, high conversion likelihood',
+    notes: 'Close family friend. High trust baseline — should be easy close.'
+  },
+  // ── HOA / PROPERTY MANAGERS ──
+  {
+    id: 13, cat: 'hoa',
+    first: 'Paula', last: 'Miller',
+    phone: '', email: '',
+    address: '360 Blue Branch St (rental) — owner at 228 Two Lakes Ln',
+    sqft: 0, year: 0, stories: '', pool: '', value: '',
+    occupied: 'No', altkey: '', hoa: 'Outreach Sent',
+    status: 'Follow-Up', score: 7, source: 'HOA Meeting',
+    services: ['Pressure Wash', 'Soft Wash'],
+    jobval: '',
+    next: 'Follow up — sent fence cleaning photos, no response yet as of 6/5/2026',
+    notes: 'RENTAL OWNER. Renter is Carlos. HOA violation: fence. Chris heard at HOA meeting, cleaned fence, sent Paula photos. No response as of 6/5. Owner mailing: 228 Two Lakes Ln. Route all HOA outreach to OWNER, not Carlos.'
+  }
+];
+
+let nextId = 100;
+let currentTab = 'prospects';
+let currentSort = { col: 'score', dir: 'desc' };
+let editingId = null;
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function getScoreColor(s) {
+  if (s >= 8) return '#dc2626';
+  if (s >= 6) return '#d97706';
+  return '#3b82f6';
+}
+
+function statusBadge(s) {
+  const map = {
+    'New': 'badge-new', 'Quoted': 'badge-quoted', 'Follow-Up': 'badge-follow',
+    'Closed Won': 'badge-closed', 'Closed Lost': 'badge-lost', 'Active': 'badge-active'
+  };
+  return `<span class="badge ${map[s]||'badge-new'}">${s}</span>`;
+}
+
+function renderTable() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const filterStatus = document.getElementById('filter-status').value;
+  const filterService = document.getElementById('filter-service').value;
+
+  let rows = contacts.filter(c => {
+    if (c.cat !== currentTab) return false;
+    if (filterStatus && c.status !== filterStatus) return false;
+    if (filterService && !c.services.includes(filterService)) return false;
+    if (search) {
+      const hay = `${c.first} ${c.last} ${c.address} ${c.notes} ${c.next}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  rows.sort((a, b) => {
+    let av = a[currentSort.col], bv = b[currentSort.col];
+    if (currentSort.col === 'name') { av = `${a.last}${a.first}`; bv = `${b.last}${b.first}`; }
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av < bv) return currentSort.dir === 'asc' ? -1 : 1;
+    if (av > bv) return currentSort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+
+  if (rows.length === 0) {
+    document.getElementById('empty-state').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('empty-state').classList.add('hidden');
+
+  rows.forEach(c => {
+    const roofAge = c.year > 0 ? (new Date().getFullYear() - c.year) + ' yrs' : '—';
+    const sqftStr = c.sqft > 0 ? c.sqft.toLocaleString() : '—';
+    const scoreColor = getScoreColor(c.score);
+    const hoaTag = c.hoa ? `<span class="tag-hoa-flag">⚠ HOA: ${c.hoa}</span>` : '';
+    const rentalTag = c.occupied === 'No' ? `<span class="tag-rental">RENTAL</span>` : '';
+
+    const row = document.createElement('tr');
+    row.dataset.id = c.id;
+    row.innerHTML = `
+      <td>
+        <div class="contact-name">${c.first} ${c.last} ${rentalTag}${hoaTag}</div>
+        ${c.phone ? `<div class="contact-phone">${c.phone}</div>` : ''}
+      </td>
+      <td><div class="contact-addr">${c.address}</div></td>
+      <td>
+        <span class="score-bar"><span class="score-fill" style="width:${c.score*10}%;background:${scoreColor}"></span></span>
+        <span class="score-text" style="color:${scoreColor}">${c.score}/10</span>
+      </td>
+      <td>${statusBadge(c.status)}</td>
+      <td>${c.services.map(s=>`<span class="svc-tag">${s}</span>`).join('')}</td>
+      <td>${sqftStr}</td>
+      <td>${roofAge}</td>
+      <td>
+        <div class="notes-text">${c.next ? '→ '+c.next : (c.notes||'—').substring(0,80)+'…'}</div>
+      </td>
+      <td>
+        <div class="row-actions">
+          <button class="action-btn" onclick="openDetail(${c.id})">View</button>
+          <button class="action-btn" onclick="openEditModal(${c.id})">Edit</button>
+          <button class="action-btn danger" onclick="deleteContact(${c.id})">✕</button>
+        </div>
+      </td>`;
+    row.addEventListener('click', e => { if (!e.target.closest('button')) openDetail(c.id); });
+    tbody.appendChild(row);
+  });
+
+  updateCounts();
+}
+
+function updateCounts() {
+  ['prospects','clients','past','hoa'].forEach(cat => {
+    const n = contacts.filter(c => c.cat === cat).length;
+    document.getElementById(`tc-${cat}`).textContent = n;
+    document.getElementById(`stat-${cat === 'prospects' ? 'prospects' : cat === 'clients' ? 'clients' : cat === 'past' ? 'past' : 'hoa'}`).textContent = n;
+  });
+  document.getElementById('stat-prospects').textContent = contacts.filter(c=>c.cat==='prospects').length;
+  document.getElementById('stat-clients').textContent = contacts.filter(c=>c.cat==='clients').length;
+  document.getElementById('stat-past').textContent = contacts.filter(c=>c.cat==='past').length;
+  document.getElementById('stat-hoa').textContent = contacts.filter(c=>c.cat==='hoa').length;
+}
+
+function applyFilters() { renderTable(); }
+
+function sortTable(col) {
+  if (currentSort.col === col) currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  else { currentSort.col = col; currentSort.dir = col === 'score' ? 'desc' : 'asc'; }
+  renderTable();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = t.dataset.tab;
+    closeDetail();
+    renderTable();
+  });
+});
+
+// ── DETAIL PANEL ─────────────────────────────────────────────────────────────
+function openDetail(id) {
+  const c = contacts.find(x=>x.id===id);
+  if (!c) return;
+  document.getElementById('dp-name').textContent = `${c.first} ${c.last}`;
+  document.getElementById('dp-addr').textContent = c.address;
+
+  const roofAge = c.year > 0 ? (new Date().getFullYear() - c.year) + ' yrs (built '+c.year+')' : '—';
+  const scoreColor = getScoreColor(c.score);
+
+  let html = `
+    <div class="detail-section">
+      <h3>Lead Info</h3>
+      <div class="detail-row"><label>Score</label><value><span style="font-size:16px;font-weight:700;color:${scoreColor}">${c.score}/10</span></value></div>
+      <div class="detail-row"><label>Status</label><value>${statusBadge(c.status)}</value></div>
+      <div class="detail-row"><label>Source</label><value>${c.source||'—'}</value></div>
+      <div class="detail-row"><label>Services</label><value>${c.services.map(s=>`<span class="svc-tag">${s}</span>`).join(' ')}</value></div>
+      <div class="detail-row"><label>Est. Job Value</label><value>${c.jobval||'—'}</value></div>
+    </div>`;
+
+  if (c.phone||c.email) {
+    html += `<div class="detail-section"><h3>Contact</h3>`;
+    if (c.phone) html += `<div class="detail-row"><label>Phone</label><value><a href="tel:${c.phone}" class="detail-link">${c.phone}</a></value></div>`;
+    if (c.email) html += `<div class="detail-row"><label>Email</label><value><a href="mailto:${c.email}" class="detail-link">${c.email}</a></value></div>`;
+    html += `</div>`;
+  }
+
+  if (c.sqft||c.year||c.stories||c.pool) {
+    html += `<div class="detail-section"><h3>Property</h3>`;
+    if (c.sqft) html += `<div class="detail-row"><label>Sq Ft</label><value>${c.sqft.toLocaleString()}</value></div>`;
+    if (c.year) html += `<div class="detail-row"><label>Roof Age</label><value>${roofAge}</value></div>`;
+    if (c.stories) html += `<div class="detail-row"><label>Stories</label><value>${c.stories}</value></div>`;
+    if (c.pool) html += `<div class="detail-row"><label>Pool</label><value>${c.pool}</value></div>`;
+    if (c.occupied) html += `<div class="detail-row"><label>Owner-Occupied</label><value>${c.occupied}</value></div>`;
+    if (c.value) html += `<div class="detail-row"><label>Market Value</label><value>${c.value}</value></div>`;
+    if (c.altkey) html += `<div class="detail-row"><label>AltKey</label><value>
+      <a class="detail-link" href="https://www.lakecopropappr.com/search/?alt=${c.altkey}" target="_blank">${c.altkey} ↗</a></value></div>`;
+    if (c.hoa) html += `<div class="detail-row"><label>HOA Flag</label><value><span class="badge badge-hoa">⚠ ${c.hoa}</span></value></div>`;
+    html += `</div>`;
+  }
+
+  if (c.next) {
+    html += `<div class="detail-section"><h3>Next Action</h3><div class="next-action">→ ${c.next}</div></div>`;
+  }
+
+  if (c.notes) {
+    html += `<div class="detail-section"><h3>Notes</h3><div class="notes-text" style="max-width:100%">${c.notes}</div></div>`;
+  }
+
+  html += `<div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn btn-primary" style="flex:1" onclick="openEditModal(${c.id})">Edit Contact</button>
+  </div>`;
+
+  document.getElementById('dp-body').innerHTML = html;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Add Contact';
+  clearForm();
+  document.getElementById('f-cat').value = currentTab;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openEditModal(id) {
+  const c = contacts.find(x=>x.id===id);
+  if (!c) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'Edit Contact';
+  document.getElementById('f-first').value = c.first;
+  document.getElementById('f-last').value = c.last;
+  document.getElementById('f-phone').value = c.phone||'';
+  document.getElementById('f-email').value = c.email||'';
+  document.getElementById('f-addr').value = c.address;
+  document.getElementById('f-sqft').value = c.sqft||'';
+  document.getElementById('f-year').value = c.year||'';
+  document.getElementById('f-stories').value = c.stories||'';
+  document.getElementById('f-pool').value = c.pool||'';
+  document.getElementById('f-value').value = c.value||'';
+  document.getElementById('f-occupied').value = c.occupied||'';
+  document.getElementById('f-altkey').value = c.altkey||'';
+  document.getElementById('f-hoa').value = c.hoa||'';
+  document.getElementById('f-cat').value = c.cat;
+  document.getElementById('f-status').value = c.status;
+  document.getElementById('f-score').value = c.score;
+  document.getElementById('f-source').value = c.source||'';
+  document.getElementById('f-jobval').value = c.jobval||'';
+  document.getElementById('f-next').value = c.next||'';
+  document.getElementById('f-notes').value = c.notes||'';
+  // services
+  Array.from(document.getElementById('f-services').options).forEach(opt => {
+    opt.selected = c.services.includes(opt.value);
+  });
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId = null;
+}
+
+function clearForm() {
+  ['f-first','f-last','f-phone','f-email','f-addr','f-sqft','f-year','f-value','f-altkey','f-jobval','f-next','f-notes'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  ['f-stories','f-pool','f-occupied','f-hoa','f-status','f-source'].forEach(id=>{
+    document.getElementById(id).selectedIndex=0;
+  });
+  document.getElementById('f-score').value='';
+  Array.from(document.getElementById('f-services').options).forEach(o=>o.selected=false);
+}
+
+function saveContact() {
+  const services = Array.from(document.getElementById('f-services').selectedOptions).map(o=>o.value);
+  const data = {
+    first: document.getElementById('f-first').value.trim(),
+    last: document.getElementById('f-last').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    address: document.getElementById('f-addr').value.trim(),
+    sqft: parseInt(document.getElementById('f-sqft').value)||0,
+    year: parseInt(document.getElementById('f-year').value)||0,
+    stories: document.getElementById('f-stories').value,
+    pool: document.getElementById('f-pool').value,
+    value: document.getElementById('f-value').value.trim(),
+    occupied: document.getElementById('f-occupied').value,
+    altkey: document.getElementById('f-altkey').value.trim(),
+    hoa: document.getElementById('f-hoa').value,
+    cat: document.getElementById('f-cat').value,
+    status: document.getElementById('f-status').value,
+    score: parseInt(document.getElementById('f-score').value)||5,
+    source: document.getElementById('f-source').value,
+    services,
+    jobval: document.getElementById('f-jobval').value.trim(),
+    next: document.getElementById('f-next').value.trim(),
+    notes: document.getElementById('f-notes').value.trim()
+  };
+
+  if (!data.first && !data.last) { alert('Please enter a name.'); return; }
+
+  if (editingId) {
+    const idx = contacts.findIndex(c=>c.id===editingId);
+    contacts[idx] = { ...contacts[idx], ...data };
+  } else {
+    data.id = nextId++;
+    contacts.push(data);
+  }
+
+  closeModal();
+  renderTable();
+  if (editingId) openDetail(editingId);
+}
+
+function deleteContact(id) {
+  if (!confirm('Delete this contact?')) return;
+  contacts = contacts.filter(c=>c.id!==id);
+  closeDetail();
+  renderTable();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderTable();
+updateCounts();
+</script>
+</body>
+</html>
