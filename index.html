@@ -471,6 +471,31 @@ textarea.inp{resize:none;min-height:80px}
   </div>
 </div>
 
+<!-- STREET VIEW SHEET -->
+<div class="sheet-overlay" id="sv-sheet">
+  <div class="sheet" style="max-height:95dvh">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sv-sheet-title">Street View</div>
+    <input type="hidden" id="sv-addr-store">
+    <div style="display:flex;gap:6px;padding:0 14px 8px">
+      <button onclick="setSvLayer('c')" id="sv-btn-street" style="flex:1;padding:8px;border:1.5px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🏠 Street</button>
+      <button onclick="setSvLayer('')" id="sv-btn-map"    style="flex:1;padding:8px;border:1.5px solid var(--border);background:#fff;color:var(--text);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🗺️ Map</button>
+      <button onclick="setSvLayer('k')" id="sv-btn-sat"  style="flex:1;padding:8px;border:1.5px solid var(--border);background:#fff;color:var(--text);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🛰️ Satellite</button>
+    </div>
+    <iframe id="sv-frame" src="" style="width:100%;height:48dvh;border:none;display:block" allowfullscreen loading="lazy"></iframe>
+    <div style="padding:12px 16px">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Log this as a visual survey:</div>
+      <div style="display:flex;gap:8px">
+        <input type="date" class="inp" id="sv-date" style="flex:1">
+        <button onclick="saveStreetViewSurvey()" style="padding:10px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Save Survey ✓</button>
+      </div>
+    </div>
+    <div style="padding:0 16px 16px">
+      <button class="btn btn-outline" style="width:100%" onclick="closeSvSheet()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- PROPERTY INTEL SHEET -->
 <div class="sheet-overlay" id="intel-sheet">
   <div class="sheet" style="max-height:95dvh">
@@ -479,6 +504,11 @@ textarea.inp{resize:none;min-height:80px}
     <div>
       <div class="intel-sheet-sec">
         <div class="intel-sheet-title">Measurements</div>
+        <div style="background:var(--blue-lt);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+          <div class="field-lbl" style="color:var(--blue-dk)">House Sq Ft (living area)</div>
+          <input class="inp" id="if-house-sqft" type="number" placeholder="e.g. 2000" style="background:#fff;margin-top:4px">
+          <div style="font-size:11px;color:var(--blue);margin-top:4px">Used for Auto-Calculate below ↓ &nbsp;·&nbsp; Also auto-filled by County lookup</div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           <div><div class="field-lbl">Roof Sq Ft</div><input class="inp" id="if-roof-sqft" type="number" placeholder="auto-calc"></div>
           <div><div class="field-lbl">Wall Sq Ft</div><input class="inp" id="if-wall-sqft" type="number" placeholder="auto-calc"></div>
@@ -813,7 +843,7 @@ async function renderHUD() {
 
     <!-- LOOKUP BUTTONS -->
     <div class="lookup-row">
-      <button class="lookup-btn" onclick="openLookup('county')"><span class="lookup-btn-icon">🏛️</span>County</button>
+      <button class="lookup-btn" id="lookup-county-btn" onclick="openLookup('county')"><span class="lookup-btn-icon">🏛️</span>County</button>
       <button class="lookup-btn" onclick="openLookup('streetview')"><span class="lookup-btn-icon">🗺️</span>Street View</button>
       <button class="lookup-btn" onclick="openLookup('permits')"><span class="lookup-btn-icon">📋</span>Permits</button>
       <button class="lookup-btn" onclick="showIntelSheet()"><span class="lookup-btn-icon">📐</span>Intel</button>
@@ -1327,19 +1357,220 @@ function calcMeasurements(sqft, stories, pitch) {
 function openLookup(type) {
   const p = currentProspect;
   if (!p) return;
+  if (type === 'county')     { autoFillCounty(); return; }
+  if (type === 'streetview') { showStreetViewSheet(); return; }
+  // Permits: open targeted search
   const addr = [p.address, p.city || 'Eustis', 'FL', p.zip || ''].filter(Boolean).join(', ');
+  window.open(`https://www.google.com/search?q=${encodeURIComponent(addr + ' roof permit building permit lake county fl')}`, '_blank');
+}
+
+// ── COUNTY AUTO-FILL ──────────────────────────────────────────────────────────
+async function autoFillCounty() {
+  const p = currentProspect;
+  if (!p?.address) { showToast('No address on file'); return; }
+
+  // Show loading on button
+  const btn = document.getElementById('lookup-county-btn');
+  const origHtml = btn ? btn.innerHTML : null;
+  if (btn) { btn.innerHTML = '<span class="lookup-btn-icon">⏳</span>Loading…'; btn.disabled = true; }
+
+  showToast('🔍 Fetching county records…');
+
+  // Multiple CORS proxies to try
+  const PROXIES = [
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  ];
+
+  // Lake County FL property appraiser search URL patterns to try
+  const addrClean = p.address.replace(/\s+/g, ' ').trim();
+  const cityClean = (p.city || 'Eustis').trim();
+  const COUNTY_URLS = [
+    `https://www.lakecopropappr.com/parcel-search/?addr=${encodeURIComponent(addrClean)}&city=${encodeURIComponent(cityClean)}`,
+    `https://www.lakecopropappr.com/Search.aspx?Address=${encodeURIComponent(addrClean)}`,
+    `https://www.lakecopropappr.com/?s=${encodeURIComponent(addrClean + ' ' + cityClean)}`,
+  ];
+
+  let extracted = null;
+  let html = null;
+
+  outer:
+  for (const searchUrl of COUNTY_URLS) {
+    for (const proxyFn of PROXIES) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 9000);
+        const resp = await fetch(proxyFn(searchUrl), { signal: controller.signal });
+        clearTimeout(timer);
+        if (!resp.ok) continue;
+        html = await resp.text();
+        if (html.length < 300) continue;
+        extracted = parsePropHtml(html);
+        if (extracted.legalName || extracted.yearBuilt || extracted.sqft) break outer;
+      } catch(e) { continue; }
+    }
+  }
+
+  // Restore button
+  if (btn) { btn.innerHTML = origHtml; btn.disabled = false; }
+
+  if (extracted && (extracted.legalName || extracted.yearBuilt || extracted.sqft || extracted.value)) {
+    // Open intel sheet and pre-fill
+    showIntelSheet();
+    if (extracted.legalName && !document.getElementById('if-legal-name').value)
+      document.getElementById('if-legal-name').value = extracted.legalName;
+    if (extracted.sqft)
+      document.getElementById('if-house-sqft').value = extracted.sqft;
+
+    // Save year_built and value directly to the prospect if they're currently empty
+    const directUpdates = {};
+    if (extracted.yearBuilt && !p.year_built) directUpdates.year_built = extracted.yearBuilt;
+    if (extracted.value && !p.value) directUpdates.value = extracted.value;
+    if (Object.keys(directUpdates).length) {
+      await sb.from('prospects').update(directUpdates).eq('id', p.id);
+      Object.assign(currentProspect, directUpdates);
+      const idx = prospects.findIndex(q => q.id === p.id);
+      if (idx !== -1) Object.assign(prospects[idx], directUpdates);
+    }
+
+    const found = [
+      extracted.legalName ? '✓ Owner name' : null,
+      extracted.sqft ? `✓ ${extracted.sqft.toLocaleString()} sq ft` : null,
+      extracted.yearBuilt ? `✓ Built ${extracted.yearBuilt}` : null,
+      extracted.value ? `✓ ${extracted.value}` : null,
+    ].filter(Boolean).join('  ');
+    showToast(found || 'County data loaded ✓');
+  } else {
+    showToast('No match — opening county website');
+    const addr = [p.address, p.city || 'Eustis', 'FL', p.zip || ''].filter(Boolean).join(', ');
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(addr + ' property appraiser lake county')}`, '_blank');
+  }
+}
+
+function parsePropHtml(html) {
+  const result = { legalName: null, yearBuilt: null, sqft: null, value: null };
+
+  // DOM-based parsing
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    doc.querySelectorAll('tr').forEach(row => {
+      const cells = [...row.querySelectorAll('td, th')];
+      if (cells.length < 2) return;
+      const label = cells[0].textContent.trim().toLowerCase().replace(/[:\s]+$/, '');
+      const val   = cells[cells.length - 1].textContent.trim();
+
+      if (!result.legalName && /^(owner|taxpayer|property owner|owner.?1|owner name)/.test(label) && val.length > 2 && val.length < 80)
+        result.legalName = val.replace(/\s+/g, ' ').toUpperCase();
+      if (!result.yearBuilt && /(year\s*built|yr\s*built|year of construct)/.test(label)) {
+        const yr = parseInt(val); if (yr > 1900 && yr <= YEAR_NOW) result.yearBuilt = yr;
+      }
+      if (!result.sqft && /(living\s*area|total\s*sq|bldg\s*sq|floor\s*area|heated\s*area|adjusted\s*sq|total.*living)/.test(label)) {
+        const sq = parseInt(val.replace(/[,\s]/g, '')); if (sq > 200 && sq < 50000) result.sqft = sq;
+      }
+      if (!result.value && /(market\s*value|total.*value|just\s*value|assessed|appraised)/.test(label)) {
+        const v = parseInt(val.replace(/[$,\s]/g, '')); if (v > 10000) result.value = '$' + Math.round(v / 1000) + 'k';
+      }
+    });
+
+    // Try class/id patterns if table parse found nothing
+    if (!result.legalName) {
+      ['[class*="owner"i]','[id*="owner"i]','[class*="taxpayer"i]'].forEach(sel => {
+        try {
+          const el = document.querySelector(sel);
+          if (el && !result.legalName) {
+            const t = el.textContent.trim();
+            if (t.length > 2 && t.length < 80) result.legalName = t.toUpperCase();
+          }
+        } catch(e) {}
+      });
+    }
+  } catch(e) {}
+
+  // Regex fallbacks on raw HTML
+  if (!result.legalName) {
+    const re = /[Oo]wner\s*(?:1?\s*)?[Nn]ame[^>]*>([^<]{3,60})</;
+    const m = html.match(re);
+    if (m && m[1].trim().length > 2) result.legalName = m[1].trim().toUpperCase();
+  }
+  if (!result.yearBuilt) {
+    const m = html.match(/[Yy]ear\s*[Bb]uilt[^>]*>(?:[^<]*<[^>]*>)*\s*((19|20)\d{2})/);
+    if (m) result.yearBuilt = parseInt(m[1]);
+  }
+  if (!result.sqft) {
+    const m = html.match(/(?:[Ll]iving|[Hh]eated|[Tt]otal)\s*(?:[Aa]rea|[Ss]q)[^>]*>(?:[^<]*<[^>]*>)*\s*([\d,]+)/);
+    if (m) { const sq = parseInt(m[1].replace(/,/g,'')); if (sq > 200 && sq < 50000) result.sqft = sq; }
+  }
+  if (!result.value) {
+    const m = html.match(/(?:[Jj]ust|[Mm]arket|[Aa]ppraised)\s*[Vv]alue[^>]*>(?:[^<]*<[^>]*>)*\s*\$?([\d,]+)/);
+    if (m) { const v = parseInt(m[1].replace(/,/g,'')); if (v > 10000) result.value = '$' + Math.round(v/1000) + 'k'; }
+  }
+
+  return result;
+}
+
+// ── STREET VIEW SHEET ─────────────────────────────────────────────────────────
+function showStreetViewSheet() {
+  const p = currentProspect;
+  if (!p?.address) return;
+  const addr = `${p.address}, ${p.city || 'Eustis'}, FL ${p.zip || ''}`.replace(/\s+,/g,',').trim();
   const enc = encodeURIComponent(addr);
-  const urls = {
-    county:     `https://www.google.com/search?q=${encodeURIComponent(addr + ' property appraiser lake county')}`,
-    streetview: `https://www.google.com/maps/search/?api=1&query=${enc}`,
-    permits:    `https://www.google.com/search?q=${encodeURIComponent(addr + ' roof permit building permit lake county fl')}`,
-  };
-  window.open(urls[type], '_blank');
+
+  document.getElementById('sv-addr-store').value = enc;
+  document.getElementById('sv-sheet-title').textContent = p.address || 'Street View';
+  document.getElementById('sv-date').value = p.last_survey_date ? p.last_survey_date.split('T')[0] : new Date().toISOString().split('T')[0];
+
+  // Default to Street View layer
+  document.getElementById('sv-frame').src = `https://maps.google.com/maps?q=${enc}&output=embed&layer=c`;
+  updateSvBtnState('c');
+
+  document.getElementById('sv-sheet').classList.add('show');
+}
+
+function closeSvSheet() {
+  document.getElementById('sv-sheet').classList.remove('show');
+  setTimeout(() => { document.getElementById('sv-frame').src = ''; }, 300);
+}
+
+function setSvLayer(layer) {
+  const enc = document.getElementById('sv-addr-store').value;
+  const layerParam = layer ? `&layer=${layer}` : '&t=k';
+  document.getElementById('sv-frame').src = `https://maps.google.com/maps?q=${enc}&output=embed${layerParam}`;
+  updateSvBtnState(layer);
+}
+
+function updateSvBtnState(active) {
+  [['c','sv-btn-street'],['','sv-btn-map'],['k','sv-btn-sat']].forEach(([l, id]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const on = l === active;
+    btn.style.background = on ? 'var(--blue)' : '#fff';
+    btn.style.color = on ? '#fff' : 'var(--text)';
+    btn.style.borderColor = on ? 'var(--blue)' : 'var(--border)';
+  });
+}
+
+async function saveStreetViewSurvey() {
+  const p = currentProspect;
+  if (!p) return;
+  const date = document.getElementById('sv-date').value;
+  if (!date) { showToast('Select a date'); return; }
+  const { error } = await sb.from('prospects').update({
+    last_survey_date: date, survey_source: 'Street View'
+  }).eq('id', p.id);
+  if (error) { showToast('Error saving'); return; }
+  Object.assign(currentProspect, { last_survey_date: date, survey_source: 'Street View' });
+  const idx = prospects.findIndex(q => q.id === p.id);
+  if (idx !== -1) Object.assign(prospects[idx], { last_survey_date: date, survey_source: 'Street View' });
+  closeSvSheet();
+  await renderHUD();
+  showToast('Survey date saved ✓');
 }
 
 function showIntelSheet() {
   const p = currentProspect;
   if (!p) return;
+  document.getElementById('if-house-sqft').value  = p.sqft || '';
   document.getElementById('if-roof-sqft').value   = p.roof_sqft || '';
   document.getElementById('if-wall-sqft').value   = p.wall_sqft || '';
   document.getElementById('if-gutter-ft').value   = p.gutter_ft || '';
@@ -1356,21 +1587,23 @@ function showIntelSheet() {
 function closeIntelSheet() { document.getElementById('intel-sheet').classList.remove('show'); }
 
 function applyCalcEstimates() {
-  const p = currentProspect;
-  if (!p?.sqft) { showToast('Enter house sq ft on the prospect first'); return; }
-  const stories = document.getElementById('if-stories').value;
-  const pitch   = document.getElementById('if-pitch').value;
-  const calc = calcMeasurements(p.sqft, stories, pitch);
+  const sqft = parseInt(document.getElementById('if-house-sqft').value) || currentProspect?.sqft;
+  if (!sqft) { showToast('Enter house sq ft in the blue box above first'); return; }
+  const stories = parseInt(document.getElementById('if-stories').value) || 1;
+  const pitch   = document.getElementById('if-pitch').value || 'medium';
+  const calc = calcMeasurements(sqft, stories, pitch);
   if (calc.roofSqft) document.getElementById('if-roof-sqft').value = calc.roofSqft;
   if (calc.wallSqft) document.getElementById('if-wall-sqft').value = calc.wallSqft;
   if (calc.gutterFt) document.getElementById('if-gutter-ft').value = calc.gutterFt;
-  showToast('Estimates filled in ✓');
+  showToast('Estimates applied ✓');
 }
 
 async function saveIntelSheet() {
   const p = currentProspect;
   if (!p) return;
+  const houseSqft = parseInt(document.getElementById('if-house-sqft').value) || null;
   const updates = {
+    sqft:               houseSqft || p.sqft || null,
     roof_sqft:          parseInt(document.getElementById('if-roof-sqft').value)    || null,
     wall_sqft:          parseInt(document.getElementById('if-wall-sqft').value)    || null,
     gutter_ft:          parseInt(document.getElementById('if-gutter-ft').value)    || null,
