@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Lake — Property Pulse Marketing</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --blue: #1a6eb5; --blue-dark: #155fa0; --blue-light: #e8f2fb;
+  --green: #1a7a4a; --green-light: #e6f5ed;
+  --orange: #c45e00; --orange-light: #fff0e0;
+  --red: #b52020; --red-light: #fdeaea;
+  --purple: #6d28d9; --purple-light: #f3e8ff;
+  --gold: #b45309; --gold-light: #fef3c7;
+  --gray: #6b7280; --gray-light: #f3f4f6;
+  --border: #d1d5db; --text: #111827; --text-muted: #6b7280;
+  --white: #ffffff; --shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: var(--text); background: #f0f4f8; }
+
+/* ── Header ── */
+.header { background: var(--blue); color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+.header-left h1 { font-size: 19px; font-weight: 700; }
+.header-left p  { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+.header-stats { display: flex; gap: 20px; text-align: center; }
+.stat-val { font-size: 20px; font-weight: 700; }
+.stat-lbl { font-size: 11px; opacity: 0.8; }
+
+/* ── Campaign Calendar Strip ── */
+.cal-strip { background: #0f3f72; padding: 8px 24px; display: flex; align-items: center; gap: 12px; overflow-x: auto; }
+.cal-label { font-size: 11px; color: rgba(255,255,255,0.6); white-space: nowrap; font-weight: 600; }
+.cal-months { display: flex; gap: 3px; }
+.cal-month { width: 52px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.07); white-space: nowrap; }
+.cal-month.send-window { background: rgba(255, 179, 0, 0.35); color: #ffd166; border: 1px solid rgba(255,179,0,0.4); }
+.cal-month.current { outline: 2px solid rgba(255,255,255,0.5); color: white; }
+.cal-legend { display: flex; gap: 14px; margin-left: auto; }
+.cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,0.7); white-space: nowrap; }
+.cal-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+/* ── Tabs ── */
+.tabs { background: white; border-bottom: 2px solid var(--border); display: flex; padding: 0 24px; }
+.tab { padding: 11px 18px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; white-space: nowrap; }
+.tab:hover { color: var(--blue); }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+.tab-count { display: inline-block; background: var(--gray-light); color: var(--gray); font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 10px; margin-left: 5px; }
+.tab.active .tab-count { background: var(--blue-light); color: var(--blue); }
+.tab-pane { display: none; } .tab-pane.active { display: block; }
+
+/* ── Toolbar ── */
+.toolbar { background: white; padding: 10px 24px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--border); }
+.search-wrap { position: relative; }
+.search-wrap input { padding: 7px 10px 7px 30px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; width: 240px; }
+.search-wrap input:focus { border-color: var(--blue); }
+.search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); opacity: 0.4; }
+select.flt { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; background: white; }
+.btn { padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: background 0.15s; }
+.btn-primary { background: var(--blue); color: white; } .btn-primary:hover { background: var(--blue-dark); }
+.btn-secondary { background: var(--gray-light); color: var(--text); border: 1px solid var(--border); } .btn-secondary:hover { background: #e5e7eb; }
+.btn-orange { background: var(--orange); color: white; } .btn-orange:hover { background: #a04e00; }
+.btn-green { background: var(--green); color: white; } .btn-green:hover { background: #156040; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.ml-auto { margin-left: auto; }
+
+/* ── Table ── */
+.table-wrap { padding: 16px 24px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+thead { background: var(--gray-light); }
+th { padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; white-space: nowrap; }
+th:hover { color: var(--blue); }
+td { padding: 11px 12px; border-top: 1px solid var(--border); vertical-align: middle; }
+tr:hover td { background: var(--blue-light); }
+tr.selected td { background: #dbeafe; }
+
+/* ── Tier Badges ── */
+.tier { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.tier-sweet { background: #fef3c7; color: #92400e; }
+.tier-hot   { background: #fee2e2; color: #b91c1c; }
+.tier-warm  { background: #fff7ed; color: #c2410c; }
+.tier-cold  { background: #e0f2fe; color: #0369a1; }
+.tier-referral { background: var(--purple-light); color: var(--purple); }
+
+/* ── Score Bar ── */
+.score-wrap { display: flex; align-items: center; gap: 6px; }
+.score-bar { width: 52px; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 3px; }
+.score-num { font-size: 12px; font-weight: 700; }
+
+/* ── Coverage Cards ── */
+.coverage-section { padding: 16px 24px; }
+.hood-card { background: white; border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
+.hood-header { background: var(--blue); color: white; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+.hood-header h3 { font-size: 14px; font-weight: 700; flex: 1; }
+.progress-pill { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; }
+.hood-table th, .hood-table td { padding: 9px 14px; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.dot-done    { background: var(--green); }
+.dot-prog    { background: var(--orange); }
+.dot-none    { background: #d1d5db; }
+.gis-link { color: var(--blue); font-size: 12px; font-weight: 600; text-decoration: none; }
+.gis-link:hover { text-decoration: underline; }
+
+/* ── Campaign Panel ── */
+.campaign-wrap { padding: 16px 24px; display: grid; grid-template-columns: 340px 1fr; gap: 16px; }
+.camp-card { background: white; border-radius: 8px; box-shadow: var(--shadow); padding: 18px; }
+.camp-card h3 { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.camp-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px; }
+.camp-row label { color: var(--text-muted); }
+.camp-row value { font-weight: 600; }
+.budget-bar-wrap { margin: 12px 0; }
+.budget-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+.budget-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+.budget-fill { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.3s; }
+
+/* ── Detail Panel ── */
+.detail-panel { display: none; position: fixed; right: 0; top: 0; bottom: 0; width: 400px; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.12); z-index: 100; overflow-y: auto; }
+.detail-panel.open { display: block; }
+.detail-header { padding: 20px; }
+.detail-header.sweet { background: linear-gradient(135deg, #92400e, #b45309); color: white; }
+.detail-header.hot   { background: linear-gradient(135deg, #991b1b, #dc2626); color: white; }
+.detail-header.warm  { background: linear-gradient(135deg, #9a3412, #ea580c); color: white; }
+.detail-header.cold  { background: linear-gradient(135deg, #0c4a6e, #0284c7); color: white; }
+.detail-header.referral { background: linear-gradient(135deg, #4c1d95, #7c3aed); color: white; }
+.detail-close { float: right; background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; }
+.detail-body { padding: 20px; }
+.detail-section { margin-bottom: 18px; }
+.detail-section h4 { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+.detail-row { display: flex; justify-content: space-between; margin-bottom: 7px; font-size: 13px; }
+.detail-row label { color: var(--text-muted); }
+.detail-row value { font-weight: 500; text-align: right; max-width: 60%; }
+.pitch-box { background: var(--gold-light); border: 1px solid #fde68a; border-radius: 6px; padding: 12px; font-size: 12px; }
+.pitch-headline { font-weight: 700; color: var(--gold); font-size: 13px; margin-bottom: 6px; }
+.score-breakdown { background: var(--gray-light); border-radius: 6px; padding: 12px; }
+.score-breakdown-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+.score-breakdown-row .pts { font-weight: 700; color: var(--green); }
+.score-total { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; font-weight: 700; display: flex; justify-content: space-between; font-size: 13px; }
+.timeline-item { display: flex; gap: 10px; margin-bottom: 12px; }
+.timeline-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); margin-top: 3px; flex-shrink: 0; }
+.timeline-content { font-size: 12px; }
+.timeline-date { color: var(--text-muted); font-size: 11px; }
+
+/* ── Modal ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 10px; width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal-header { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-header h2 { font-size: 16px; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--gray); }
+.modal-body { padding: 18px 24px; }
+.modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.form-row.single { grid-template-columns: 1fr; }
+.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+.fg { display: flex; flex-direction: column; gap: 4px; }
+.fg label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.fg input, .fg select, .fg textarea { padding: 7px 9px; border: 1px solid var(--border); border-radius: 5px; font-size: 13px; font-family: inherit; outline: none; }
+.fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--blue); }
+.fg textarea { resize: vertical; min-height: 60px; }
+.fsec { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+.rating-row { display: flex; gap: 8px; align-items: center; }
+.rating-btn { width: 36px; height: 36px; border-radius: 6px; border: 2px solid var(--border); background: white; cursor: pointer; font-size: 14px; font-weight: 700; color: var(--text-muted); transition: all 0.1s; }
+.rating-btn:hover { border-color: var(--blue); color: var(--blue); }
+.rating-btn.active { border-color: transparent; color: white; }
+.r1.active { background: #3b82f6; }
+.r2.active { background: #22c55e; }
+.r3.active { background: #eab308; }
+.r4.active { background: #f97316; }
+.r5.active { background: #ef4444; }
+
+/* ── Empty State ── */
+.empty { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 36px; margin-bottom: 10px; }
+.empty h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+
+.hidden { display: none !important; }
+.tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.tag-hoa { background: var(--purple-light); color: var(--purple); }
+.tag-pool { background: var(--blue-light); color: var(--blue); }
+.tag-rental { background: var(--gold-light); color: var(--gold); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>💧 Property Pulse — Marketing Intelligence</h1>
+    <p>Blue Lake Services · Eustis, FL · 1-mile scan zone active</p>
+  </div>
+  <div class="header-stats">
+    <div><div class="stat-val" id="hd-properties">—</div><div class="stat-lbl">In Database</div></div>
+    <div><div class="stat-val" id="hd-hot">—</div><div class="stat-lbl">Hot Leads</div></div>
+    <div><div class="stat-val" id="hd-streets">—</div><div class="stat-lbl">Streets Scanned</div></div>
+    <div><div class="stat-val" id="hd-nextwin">—</div><div class="stat-lbl">Days to Send Window</div></div>
+  </div>
+</div>
+
+<!-- CAMPAIGN CALENDAR STRIP -->
+<div class="cal-strip">
+  <span class="cal-label">ANNUAL CAMPAIGN CALENDAR</span>
+  <div class="cal-months" id="cal-months"></div>
+  <div class="cal-legend">
+    <div class="cal-legend-item"><div class="cal-dot" style="background:#ffd166"></div>Insurance Pre-Season Send</div>
+    <div class="cal-legend-item"><div class="cal-dot" style="background:rgba(255,255,255,0.25)"></div>HOA Inspection Window</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" data-tab="coverage">Scan Coverage <span class="tab-count" id="tc-cov">0/0</span></div>
+  <div class="tab" data-tab="pulse">Property Pulse <span class="tab-count" id="tc-pulse">0</span></div>
+  <div class="tab" data-tab="campaign">Campaign Planner <span class="tab-count" id="tc-camp">0</span></div>
+</div>
+
+<!-- ══ TAB: SCAN COVERAGE ══ -->
+<div id="tab-coverage" class="tab-pane active">
+  <div class="toolbar">
+    <span style="font-size:13px;color:var(--text-muted)">Systematically scan every street before mailing. Mark complete when done.</span>
+    <a href="https://gis.lakecountyfl.gov/gisweb" target="_blank" class="btn btn-primary ml-auto">🗺 Open GIS Viewer</a>
+    <button class="btn btn-secondary" onclick="openAddStreetModal()">+ Add Street</button>
+  </div>
+  <div class="coverage-section" id="coverage-body">
+    <div class="empty"><div class="empty-icon">⏳</div><h3>Loading coverage data…</h3></div>
+  </div>
+</div>
+
+<!-- ══ TAB: PROPERTY PULSE ══ -->
+<div id="tab-pulse" class="tab-pane">
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="pulse-search" placeholder="Search address, owner…" oninput="renderPulse()">
+    </div>
+    <select class="flt" id="pulse-neighborhood" onchange="renderPulse()">
+      <option value="">All Neighborhoods</option>
+    </select>
+    <select class="flt" id="pulse-tier" onchange="renderPulse()">
+      <option value="">All Tiers</option>
+      <option value="insurance_sweet_spot">🔥 Insurance Sweet Spot</option>
+      <option value="hot">🔴 Hot</option>
+      <option value="warm">🟠 Warm</option>
+      <option value="cold">🔵 Cold</option>
+      <option value="referral">🟣 Referral</option>
+    </select>
+    <button class="btn btn-primary ml-auto" onclick="openAddPropertyModal()">+ Log Property</button>
+    <button class="btn btn-orange" id="btn-add-campaign" onclick="openCampaignSelectModal()" style="display:none">📮 Add to Campaign (<span id="sel-count">0</span>)</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th>
+          <th>Address</th>
+          <th>Owner</th>
+          <th>Value</th>
+          <th>Roof Age</th>
+          <th>Condition</th>
+          <th>Score</th>
+          <th>Tier</th>
+          <th>Last Scan</th>
+          <th>Cards Sent</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="pulse-body"></tbody>
+    </table>
+    <div id="pulse-empty" class="empty hidden">
+      <div class="empty-icon">🏠</div>
+      <h3>No properties logged yet</h3>
+      <p>Start scanning neighborhoods and log candidates as you find them.</p>
+      <br><button class="btn btn-primary" onclick="openAddPropertyModal()">+ Log First Property</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: CAMPAIGN PLANNER ══ -->
+<div id="tab-campaign" class="tab-pane">
+  <div class="toolbar">
+    <span style="font-size:13px;color:var(--text-muted)">Plan your postcard batches around insurance and HOA cycles.</span>
+    <button class="btn btn-primary ml-auto" onclick="openNewCampaignModal()">+ New Campaign</button>
+  </div>
+  <div class="campaign-wrap">
+    <!-- LEFT: Active Campaign -->
+    <div>
+      <div class="camp-card" id="active-camp-card">
+        <h3>Active Campaign</h3>
+        <div class="empty" style="padding:20px 0">
+          <div class="empty-icon">📮</div>
+          <p>No active campaign.<br>Create one to start queueing cards.</p>
+        </div>
+      </div>
+      <br>
+      <!-- Timing Guidance -->
+      <div class="camp-card">
+        <h3>🗓 Send Window Timing</h3>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
+          <div style="margin-bottom:10px">
+            <strong style="color:var(--text)">Window 1 — Aug 15 – Sep 30</strong><br>
+            Ahead of Florida insurance renewal season (Oct–Nov). Carriers use CAPE Analytics / EagleView aerial scans in Oct–Nov before policy renewals. Get your postcard there first.
+          </div>
+          <div style="margin-bottom:10px">
+            <strong style="color:var(--text)">Window 2 — Jan 15 – Feb 28</strong><br>
+            Ahead of spring HOA inspection season (Mar–Apr) and insurance spring aerial cycle (Feb–Apr, clearest weather). HOA violation notices follow spring meetings.
+          </div>
+          <div>
+            <strong style="color:var(--text)">Post-Storm Burst (as needed)</strong><br>
+            After any named storm, scan for enclosure/roof damage within 48 hrs and mail urgent outreach within the week. Emergency pricing applies.
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- RIGHT: Campaign Queue Table -->
+    <div>
+      <div class="camp-card" style="padding:0;overflow:hidden">
+        <table>
+          <thead>
+            <tr>
+              <th>Campaign</th>
+              <th>Send Date</th>
+              <th>Platform</th>
+              <th>Budget</th>
+              <th>Cards</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="camp-body">
+            <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No campaigns yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detail-panel">
+  <div id="dp-header" class="detail-header">
+    <button class="detail-close" onclick="closeDetail()">×</button>
+    <div style="margin-top:4px">
+      <div id="dp-tier" style="font-size:11px;opacity:0.8;margin-bottom:4px"></div>
+      <div id="dp-name" style="font-size:17px;font-weight:700"></div>
+      <div id="dp-addr" style="font-size:13px;opacity:0.85;margin-top:2px"></div>
+    </div>
+  </div>
+  <div class="detail-body" id="dp-body"></div>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Add Property Modal -->
+<div class="modal-overlay" id="prop-modal" onclick="if(event.target===this)closePropModal()">
+<div class="modal">
+  <div class="modal-header">
+    <h2 id="prop-modal-title">Log Property Candidate</h2>
+    <button class="modal-close" onclick="closePropModal()">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="fsec">Property</div>
+    <div class="form-row single"><div class="fg"><label>Street Address</label><input id="pm-addr" type="text" placeholder="359 Blue Branch St, Eustis, FL 32726"></div></div>
+    <div class="form-row">
+      <div class="fg"><label>Neighborhood</label>
+        <select id="pm-hood">
+          <option>Blue Lake Estates</option>
+          <option>Park Place on Lake Joanna</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>AltKey (Appraiser)</label><input id="pm-altkey" type="text" placeholder="3829420"></div>
+    </div>
+    <div class="form-row triple">
+      <div class="fg"><label>Year Built</label><input id="pm-year" type="number" placeholder="2006"></div>
+      <div class="fg"><label>Roof Replaced Year</label><input id="pm-roofrep" type="number" placeholder="(if permit found)"></div>
+      <div class="fg"><label>Living Sq Ft</label><input id="pm-sqft" type="number" placeholder="2468"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Assessed Value</label><input id="pm-value" type="number" placeholder="396932"></div>
+      <div class="fg"><label>Stories</label>
+        <select id="pm-stories"><option value="">—</option><option>1</option><option>1.5</option><option>2</option></select>
+      </div>
+    </div>
+    <div class="form-row triple">
+      <div class="fg"><label>Owner-Occupied?</label>
+        <select id="pm-occ"><option value="">—</option><option value="true">Yes (Homestead)</option><option value="false">No (Rental)</option></select>
+      </div>
+      <div class="fg"><label>Pool?</label>
+        <select id="pm-pool"><option value="">—</option><option value="true">Yes</option><option value="false">No</option></select>
+      </div>
+      <div class="fg"><label>HOA Zone?</label>
+        <select id="pm-hoa"><option value="">—</option><option value="true">Yes</option><option value="false">No</option></select>
+      </div>
+    </div>
+    <div class="fsec">Owner Info (for postcards)</div>
+    <div class="form-row">
+      <div class="fg"><label>First Name</label><input id="pm-first" type="text"></div>
+      <div class="fg"><label>Last Name</label><input id="pm-last" type="text"></div>
+    </div>
+    <div class="form-row single"><div class="fg"><label>Owner Mailing Address (if different — rental)</label><input id="pm-mail" type="text" placeholder="Leave blank if same as property"></div></div>
+
+    <div class="fsec">Scan Observation</div>
+    <div style="margin-bottom:12px">
+      <div class="fg"><label>Overall Roof Condition (1=clean → 5=severe)</label></div>
+      <div class="rating-row" style="margin-top:8px">
+        <button class="rating-btn r1" onclick="setRating(1)">1</button>
+        <button class="rating-btn r2" onclick="setRating(2)">2</button>
+        <button class="rating-btn r3" onclick="setRating(3)">3</button>
+        <button class="rating-btn r4" onclick="setRating(4)">4</button>
+        <button class="rating-btn r5" onclick="setRating(5)">5</button>
+        <span id="rating-label" style="font-size:12px;color:var(--text-muted);margin-left:8px">Click to rate</span>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Worst Slope Direction</label>
+        <select id="pm-slope"><option value="">—</option><option>N</option><option>S</option><option>E</option><option>W</option><option>NE</option><option>NW</option><option>SE</option><option>SW</option></select>
+      </div>
+      <div class="fg"><label>Staining Type</label>
+        <select id="pm-stain"><option value="">—</option><option>Algae (dark green/black)</option><option>Moss</option><option>Lichen</option><option>General darkening</option><option>Mixed</option></select>
+      </div>
+    </div>
+    <div class="form-row single"><div class="fg"><label>Tree Canopy Notes</label><input id="pm-trees" type="text" placeholder="e.g. Large oak overhang on north side"></div></div>
+    <div class="form-row single"><div class="fg"><label>Other Observations</label><textarea id="pm-notes" placeholder="Pool screen condition, missing panels, fence, driveway, etc."></textarea></div></div>
+    <div class="form-row">
+      <div class="fg"><label>Imagery Source</label>
+        <select id="pm-source"><option>EagleView</option><option>GIS Aerial</option><option>Google Maps</option><option>In Person</option></select>
+      </div>
+      <div class="fg"><label>Imagery Date</label><input id="pm-imgdate" type="text" placeholder="e.g. Jan 2026"></div>
+    </div>
+    <div id="pm-score-preview" style="display:none;margin-top:12px;background:var(--gray-light);border-radius:6px;padding:12px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">Conversion Score Preview</div>
+      <div id="pm-score-val" style="font-size:22px;font-weight:800;color:var(--blue)">—</div>
+      <div id="pm-tier-val" style="font-size:12px;margin-top:3px"></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="closePropModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveProperty()">Save & Score</button>
+  </div>
+</div>
+</div>
+
+<!-- Add Street Modal -->
+<div class="modal-overlay" id="street-modal" onclick="if(event.target===this)closeStreetModal()">
+<div class="modal" style="width:400px">
+  <div class="modal-header"><h2>Add Street to Scan List</h2><button class="modal-close" onclick="closeStreetModal()">×</button></div>
+  <div class="modal-body">
+    <div class="form-row single"><div class="fg"><label>Neighborhood</label><input id="sm-hood" type="text" placeholder="Blue Lake Estates"></div></div>
+    <div class="form-row single"><div class="fg"><label>Street Name</label><input id="sm-street" type="text" placeholder="Blue Crown Ln"></div></div>
+    <div class="form-row">
+      <div class="fg"><label>Status</label>
+        <select id="sm-status"><option value="not_started">Not Started</option><option value="in_progress">In Progress</option><option value="complete">Complete</option></select>
+      </div>
+      <div class="fg"><label>GIS Approx Center Lat</label><input id="sm-lat" type="number" step="0.0001" placeholder="28.8500"></div>
+    </div>
+    <div class="form-row single"><div class="fg"><label>Notes</label><input id="sm-notes" type="text"></div></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="closeStreetModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveStreet()">Add Street</button>
+  </div>
+</div>
+</div>
+
+<!-- New Campaign Modal -->
+<div class="modal-overlay" id="camp-modal" onclick="if(event.target===this)closeCampModal()">
+<div class="modal">
+  <div class="modal-header"><h2>New Postcard Campaign</h2><button class="modal-close" onclick="closeCampModal()">×</button></div>
+  <div class="modal-body">
+    <div class="form-row single"><div class="fg"><label>Campaign Name</label><input id="cm-name" type="text" placeholder="September 2026 — Insurance Pre-Season"></div></div>
+    <div class="form-row">
+      <div class="fg"><label>Campaign Type</label>
+        <select id="cm-type" onchange="prefillCampaignType()">
+          <option value="insurance_pre_season">Insurance Pre-Season (Aug–Sep)</option>
+          <option value="hoa_pre_season">HOA Pre-Season (Jan–Feb)</option>
+          <option value="storm_burst">Post-Storm Burst</option>
+          <option value="general">General</option>
+        </select>
+      </div>
+      <div class="fg"><label>Target Send Date</label><input id="cm-date" type="date"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Platform</label>
+        <select id="cm-platform"><option>Click2Mail</option><option>Lob</option></select>
+      </div>
+      <div class="fg"><label>Budget ($)</label><input id="cm-budget" type="number" placeholder="50"></div>
+    </div>
+    <div class="form-row single"><div class="fg"><label>Trigger Window (describe)</label><input id="cm-window" type="text" placeholder="October–November insurance renewals"></div></div>
+    <div id="cm-card-preview" style="margin-top:12px;background:var(--blue-light);border-radius:6px;padding:12px;font-size:12px"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="closeCampModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveCampaign()">Create Campaign</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ══ SUPABASE ══════════════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://mkrygrgdyjsvnifypxkm.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcnlncmdkeWpzdm5pZnlweGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MjM3MjcsImV4cCI6MjA5NjI5OTcyN30.0Mto9P-DJixNTJK1EPolTbFoZR_sD8Q8M-gXnrwTobE';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ══ STATE ═════════════════════════════════════════════════════════════════════
+let allProperties  = [];
+let allScanEvents  = [];
+let allCoverage    = [];
+let allCampaigns   = [];
+let allSends       = [];
+let selectedIds    = new Set();
+let currentRating  = 0;
+let editingPropId  = null;
+
+// ══ CONVERSION SCORING ═══════════════════════════════════════════════════════
+const CURRENT_YEAR = new Date().getFullYear();
+
+function getRoofAge(prop) {
+  if (prop.roof_replaced_year) return CURRENT_YEAR - prop.roof_replaced_year;
+  if (prop.year_built) return CURRENT_YEAR - prop.year_built;
+  return null;
+}
+
+function computeScore(prop, conditionScore) {
+  let score = 0;
+  const breakdown = [];
+
+  // 1. Visual condition (1-5 → 0-25 pts)
+  const cond = conditionScore || 0;
+  const condPts = Math.round((cond - 1) * 6.25);
+  score += condPts;
+  breakdown.push({ label: `Roof condition (${cond}/5)`, pts: condPts });
+
+  // 2. Assessed value (0-20 pts)
+  const val = prop.assessed_value || 0;
+  let valPts = 0;
+  if (val >= 450000) valPts = 20;
+  else if (val >= 350000) valPts = 17;
+  else if (val >= 300000) valPts = 13;
+  else if (val >= 200000) valPts = 8;
+  else if (val > 0) valPts = 4;
+  score += valPts;
+  breakdown.push({ label: `Home value ($${val ? val.toLocaleString() : '?'})`, pts: valPts });
+
+  // 3. HOA jurisdiction (+12 pts)
+  if (prop.hoa_jurisdiction) { score += 12; breakdown.push({ label: 'HOA jurisdiction', pts: 12 }); }
+
+  // 4. Roof age (0-20 pts)
+  const age = getRoofAge(prop);
+  let agePts = 0;
+  if (age !== null) {
+    if (age >= 10 && age <= 20) agePts = 20;
+    else if (age > 20 && age <= 25) agePts = 12;
+    else if (age > 25) agePts = 3;
+    else if (age >= 5) agePts = 10;
+    else agePts = 0;
+  }
+  score += agePts;
+  breakdown.push({ label: `Roof age (~${age !== null ? age+'yr' : '?'})`, pts: agePts });
+
+  // 5. Owner-occupied (+10 pts)
+  if (prop.owner_occupied || prop.homestead_exempt) { score += 10; breakdown.push({ label: 'Owner-occupied (homestead)', pts: 10 }); }
+
+  // 6. Pool / screen enclosure (+5 pts)
+  if (prop.has_pool || prop.has_screen_enclosure) { score += 5; breakdown.push({ label: 'Pool / screen enclosure', pts: 5 }); }
+
+  return { score: Math.min(score, 100), breakdown };
+}
+
+function getTier(score, prop, conditionScore) {
+  const age = getRoofAge(prop);
+  const val = prop.assessed_value || 0;
+  if (conditionScore >= 4 && age !== null && age >= 10 && age <= 20 && val >= 350000)
+    return 'insurance_sweet_spot';
+  if (score >= 68) return 'hot';
+  if (score >= 48) return 'warm';
+  if (age !== null && age > 25) return 'referral';
+  return 'cold';
+}
+
+function tierLabel(t) {
+  const m = { insurance_sweet_spot:'🔥 Insurance Sweet Spot', hot:'🔴 Hot', warm:'🟠 Warm', cold:'🔵 Cold', referral:'🟣 Referral' };
+  return m[t] || t;
+}
+function tierClass(t) {
+  return 'tier tier-' + (t === 'insurance_sweet_spot' ? 'sweet' : t);
+}
+function scoreColor(s) {
+  if (s >= 68) return '#dc2626';
+  if (s >= 48) return '#d97706';
+  return '#3b82f6';
+}
+
+// ══ PITCH GENERATOR ══════════════════════════════════════════════════════════
+function generatePitch(prop, scan) {
+  const name = prop.owner_first ? prop.owner_first : 'Homeowner';
+  const val = prop.assessed_value || 0;
+  const age = getRoofAge(prop);
+  const tier = scan ? getTier(computeScore(prop, scan.condition_score).score, prop, scan.condition_score) : 'warm';
+
+  const slopeMap = { N:'north-facing', S:'south-facing', E:'east-facing', W:'west-facing',
+    NE:'northeast-facing', NW:'northwest-facing', SE:'southeast-facing', SW:'southwest-facing' };
+  const slopeDesc = scan?.worst_slope_direction ? slopeMap[scan.worst_slope_direction] || 'roof' : 'roof';
+  const stain = scan?.staining_type || 'algae growth';
+  const trees = scan?.tree_canopy_notes ? `, likely promoted by ${scan.tree_canopy_notes.toLowerCase()}` : '';
+
+  let headline, body;
+  if (prop.hoa_jurisdiction && tier !== 'cold') {
+    headline = 'Your roof may be heading toward an HOA violation notice';
+    body = `${name}, aerial imagery shows visible ${stain} on the ${slopeDesc} slope of your home at ${prop.address}${trees}. HOA inspections in your neighborhood commonly flag this exact condition. We can soft wash and document it before you receive a notice — keeping your property compliant and your value protected. We're Blue Lake Services, locally owned in Eustis, and we include before/after photo documentation with every job.`;
+  } else if (val >= 300000 && tier !== 'cold') {
+    headline = 'Florida insurers are flagging roofs like yours for non-renewal';
+    body = `${name}, aerial imagery shows ${stain} on the ${slopeDesc} slope of your roof at ${prop.address}${trees}. Insurance carriers in Florida use the same aerial systems to flag roofs for non-renewal — and this is exactly what they look for. We can soft wash the roof, remove the growth completely, and give you before/after photo documentation to keep on file for your carrier. We're Blue Lake Services, locally owned in Eustis.${age && age > 15 ? ' Given your roof is approximately ' + age + ' years old, acting now protects the warranty and prevents replacement costs.' : ''}`;
+  } else {
+    headline = 'Your roof has algae growth that could affect your insurance';
+    body = `${name}, we noticed ${stain} on your roof at ${prop.address}${trees}. This type of growth is what triggers insurance non-renewal notices across Lake County. Our soft wash treatment removes it completely — we're Blue Lake Services, locally owned in Eustis, and we include before/after documentation with every job. We'd love to take care of it for you.`;
+  }
+  return { headline, body };
+}
+
+// ══ CALENDAR STRIP ════════════════════════════════════════════════════════════
+function buildCalendar() {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // Send windows: Aug–Sep (insurance pre-season) and Jan–Feb (HOA/spring)
+  const sendMonths = new Set([7, 8, 0, 1]); // 0-indexed
+  const curMonth = new Date().getMonth();
+  const container = document.getElementById('cal-months');
+  container.innerHTML = months.map((m, i) => {
+    let cls = 'cal-month';
+    if (sendMonths.has(i)) cls += ' send-window';
+    if (i === curMonth) cls += ' current';
+    return `<div class="${cls}">${m}</div>`;
+  }).join('');
+
+  // Days to next send window
+  const now = new Date();
+  const windows = [
+    new Date(now.getFullYear(), 7, 15), // Aug 15
+    new Date(now.getFullYear(), 0, 15), // Jan 15 next year
+    new Date(now.getFullYear()+1, 7, 15)
+  ];
+  const next = windows.filter(d => d > now).sort((a,b)=>a-b)[0];
+  if (next) {
+    const days = Math.ceil((next - now) / 86400000);
+    document.getElementById('hd-nextwin').textContent = days;
+  }
+}
+
+// ══ LOAD DATA ═════════════════════════════════════════════════════════════════
+async function loadAll() {
+  try {
+    const [pRes, eRes, cRes, campRes, sRes] = await Promise.all([
+      sb.from('scan_properties').select('*').order('created_at', {ascending:false}),
+      sb.from('scan_events').select('*').order('scanned_at', {ascending:false}),
+      sb.from('scan_coverage').select('*').order('neighborhood,street_name'),
+      sb.from('postcard_campaigns').select('*').order('target_send_date', {ascending:false}),
+      sb.from('postcard_sends').select('*')
+    ]);
+    allProperties = pRes.data || [];
+    allScanEvents = eRes.data || [];
+    allCoverage   = cRes.data || [];
+    allCampaigns  = campRes.data || [];
+    allSends      = sRes.data || [];
+  } catch(e) {
+    console.warn('Supabase not connected, using demo data:', e.message);
+    useDemoData();
+  }
+  updateStats();
+  populateNeighborhoodFilter();
+  renderCoverage();
+  renderPulse();
+  renderCampaigns();
+}
+
+function useDemoData() {
+  // Pre-seed with known leads from memory
+  allProperties = [
+    { id:'1', address:'359 Blue Branch St', city:'Eustis', state:'FL', zip:'32726',
+      neighborhood:'Blue Lake Estates', altkey:'3829420',
+      owner_first:'Patrick & Jennifer', owner_last:'Evers',
+      assessed_value:396932, year_built:2006, living_sqft:2468, stories:1,
+      has_pool:true, has_screen_enclosure:false, owner_occupied:true, homestead_exempt:true,
+      hoa_jurisdiction:false, roof_replaced_year:null },
+    { id:'2', address:'251 Blue Water St', city:'Eustis', state:'FL', zip:'32726',
+      neighborhood:'Blue Lake Estates', altkey:'3829451',
+      owner_first:'Mohammed & Ruhipar', owner_last:'Zaher',
+      assessed_value:484474, year_built:2007, living_sqft:3614, stories:2,
+      has_pool:true, has_screen_enclosure:false, owner_occupied:true, homestead_exempt:true,
+      hoa_jurisdiction:false, roof_replaced_year:null },
+    { id:'3', address:'363 Blue Branch St', city:'Eustis', state:'FL', zip:'32726',
+      neighborhood:'Blue Lake Estates', altkey:'3829419',
+      owner_first:'John & Christina', owner_last:'Higgins',
+      assessed_value:406974, year_built:2006, living_sqft:2428, stories:1,
+      has_pool:true, has_screen_enclosure:false, owner_occupied:true, homestead_exempt:true,
+      hoa_jurisdiction:false, roof_replaced_year:null },
+    { id:'4', address:'34436 Tiffany Ln', city:'Eustis', state:'FL', zip:'32736',
+      neighborhood:'Park Place on Lake Joanna', altkey:'3737261',
+      owner_first:'William & Maria', owner_last:'Wright',
+      assessed_value:594228, year_built:2003, living_sqft:3647, stories:1,
+      has_pool:false, has_screen_enclosure:false, owner_occupied:true, homestead_exempt:true,
+      hoa_jurisdiction:false, roof_replaced_year:null },
+    { id:'5', address:'34400 Tiffany Ln', city:'Eustis', state:'FL', zip:'32736',
+      neighborhood:'Park Place on Lake Joanna', altkey:'3737237',
+      owner_first:'Orville & Janet', owner_last:'Thompson',
+      assessed_value:431054, year_built:2001, living_sqft:2283, stories:1,
+      has_pool:false, has_screen_enclosure:false, owner_occupied:true, homestead_exempt:true,
+      hoa_jurisdiction:false, roof_replaced_year:null }
+  ];
+  allScanEvents = [
+    { id:'e1', property_id:'1', scanned_at:'2026-06-06', imagery_source:'GIS Aerial', imagery_date:'2025 aerial',
+      condition_score:5, worst_slope_direction:'N', staining_type:'Algae (dark green/black)', tree_canopy_notes:'', notes:'Darkest roof in neighborhood' },
+    { id:'e2', property_id:'2', scanned_at:'2026-06-06', imagery_source:'GIS Aerial', imagery_date:'2025 aerial',
+      condition_score:4, worst_slope_direction:'N', staining_type:'Algae (dark green/black)', tree_canopy_notes:'', notes:'Second darkest in scan' },
+    { id:'e3', property_id:'3', scanned_at:'2026-06-06', imagery_source:'GIS Aerial', imagery_date:'2025 aerial',
+      condition_score:3, worst_slope_direction:'', staining_type:'General darkening', tree_canopy_notes:'', notes:'Moderate candidate' },
+    { id:'e4', property_id:'4', scanned_at:'2026-06-06', imagery_source:'GIS Aerial', imagery_date:'2025 aerial',
+      condition_score:4, worst_slope_direction:'N', staining_type:'Dark staining', tree_canopy_notes:'Tree canopy north side', notes:'23-yr roof, no permit found' },
+    { id:'e5', property_id:'5', scanned_at:'2026-06-06', imagery_source:'GIS Aerial', imagery_date:'2025 aerial',
+      condition_score:4, worst_slope_direction:'N', staining_type:'Dark staining', tree_canopy_notes:'', notes:'25-yr roof, original owners' }
+  ];
+  allCoverage = [
+    { id:'c1', neighborhood:'Blue Lake Estates', street_name:'Blue Branch St',   status:'complete',    last_scanned_at:'2026-06-06', candidates_found:3 },
+    { id:'c2', neighborhood:'Blue Lake Estates', street_name:'Blue Crest Ave',    status:'complete',    last_scanned_at:'2026-06-06', candidates_found:0 },
+    { id:'c3', neighborhood:'Blue Lake Estates', street_name:'Blue Water St',     status:'in_progress', last_scanned_at:'2026-06-06', candidates_found:1 },
+    { id:'c4', neighborhood:'Blue Lake Estates', street_name:'Blue Crown Ln',     status:'not_started', last_scanned_at:null, candidates_found:0 },
+    { id:'c5', neighborhood:'Blue Lake Estates', street_name:'Hammond Ln',        status:'not_started', last_scanned_at:null, candidates_found:0 },
+    { id:'c6', neighborhood:'Blue Lake Estates', street_name:'N Blue Water Edge Dr', status:'not_started', last_scanned_at:null, candidates_found:0 },
+    { id:'c7', neighborhood:'Park Place on Lake Joanna', street_name:'Tiffany Ln',      status:'in_progress', last_scanned_at:'2026-06-06', candidates_found:2 },
+    { id:'c8', neighborhood:'Park Place on Lake Joanna', street_name:'Park Place Blvd', status:'not_started', last_scanned_at:null, candidates_found:0 },
+    { id:'c9', neighborhood:'Park Place on Lake Joanna', street_name:'Wingley Cir',     status:'not_started', last_scanned_at:null, candidates_found:0 },
+  ];
+  allCampaigns = [];
+  allSends = [];
+}
+
+// ══ STATS ═════════════════════════════════════════════════════════════════════
+function updateStats() {
+  document.getElementById('hd-properties').textContent = allProperties.length;
+  // Hot leads = properties with latest scan tier = hot or sweet
+  const hotCount = allProperties.filter(p => {
+    const ev = latestEvent(p.id);
+    if (!ev) return false;
+    const { score } = computeScore(p, ev.condition_score);
+    const t = getTier(score, p, ev.condition_score);
+    return t === 'hot' || t === 'insurance_sweet_spot';
+  }).length;
+  document.getElementById('hd-hot').textContent = hotCount;
+  const doneStreets = allCoverage.filter(s => s.status === 'complete').length;
+  document.getElementById('hd-streets').textContent = `${doneStreets}/${allCoverage.length}`;
+  document.getElementById('tc-cov').textContent = `${doneStreets}/${allCoverage.length}`;
+  document.getElementById('tc-pulse').textContent = allProperties.length;
+  document.getElementById('tc-camp').textContent = allCampaigns.length;
+}
+
+function latestEvent(propId) {
+  return allScanEvents.filter(e => e.property_id === propId)
+    .sort((a,b) => new Date(b.scanned_at) - new Date(a.scanned_at))[0] || null;
+}
+function sendCount(propId) {
+  return allSends.filter(s => s.property_id === propId).length;
+}
+
+function populateNeighborhoodFilter() {
+  const hoods = [...new Set(allProperties.map(p => p.neighborhood).filter(Boolean))].sort();
+  const sel = document.getElementById('pulse-neighborhood');
+  sel.innerHTML = '<option value="">All Neighborhoods</option>' + hoods.map(h => `<option>${h}</option>`).join('');
+}
+
+// ══ COVERAGE TAB ═════════════════════════════════════════════════════════════
+function renderCoverage() {
+  const container = document.getElementById('coverage-body');
+  if (!allCoverage.length) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">🗺</div><h3>No streets loaded</h3><p>Add streets to track scan progress.</p></div>';
+    return;
+  }
+  const hoods = {};
+  allCoverage.forEach(s => {
+    if (!hoods[s.neighborhood]) hoods[s.neighborhood] = [];
+    hoods[s.neighborhood].push(s);
+  });
+
+  container.innerHTML = Object.entries(hoods).map(([hood, streets]) => {
+    const done = streets.filter(s => s.status === 'complete').length;
+    const total = streets.length;
+    const pct = total ? Math.round(done/total*100) : 0;
+
+    const rows = streets.map(s => {
+      const dotClass = s.status === 'complete' ? 'dot-done' : s.status === 'in_progress' ? 'dot-prog' : 'dot-none';
+      const statusLabel = s.status === 'complete' ? 'Complete' : s.status === 'in_progress' ? 'In Progress' : 'Not Started';
+      const lastScanned = s.last_scanned_at ? new Date(s.last_scanned_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+      const candidates = s.candidates_found || 0;
+      // GIS viewer link — open to Eustis, FL area
+      const gisUrl = `https://gis.lakecountyfl.gov/gisweb`;
+      return `<tr>
+        <td><span class="status-dot ${dotClass}"></span>${s.street_name}</td>
+        <td>${statusLabel}</td>
+        <td>${lastScanned}</td>
+        <td>${candidates > 0 ? `<strong style="color:var(--orange)">${candidates}</strong>` : '—'}</td>
+        <td>
+          <a href="${gisUrl}" target="_blank" class="gis-link">Open GIS ↗</a>
+        </td>
+        <td>
+          ${s.status !== 'complete' ? `<button class="btn btn-green btn-sm" onclick="markStreetDone('${s.id}')">✓ Mark Done</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="hood-card">
+      <div class="hood-header">
+        <h3>${hood}</h3>
+        <span class="progress-pill">${done}/${total} streets · ${pct}% complete</span>
+        <div style="background:rgba(255,255,255,0.15);border-radius:10px;height:6px;width:120px;margin-left:10px;overflow:hidden">
+          <div style="background:#ffd166;height:100%;width:${pct}%;border-radius:10px"></div>
+        </div>
+      </div>
+      <table class="hood-table" style="width:100%">
+        <thead><tr>
+          <th>Street</th><th>Status</th><th>Last Scanned</th><th>Candidates</th><th>Quick Link</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+async function markStreetDone(id) {
+  const idx = allCoverage.findIndex(s => s.id === id);
+  if (idx < 0) return;
+  allCoverage[idx].status = 'complete';
+  allCoverage[idx].last_scanned_at = new Date().toISOString().slice(0,10);
+  try {
+    await sb.from('scan_coverage').update({ status:'complete', last_scanned_at: new Date().toISOString().slice(0,10) }).eq('id', id);
+  } catch(e) {}
+  renderCoverage();
+  updateStats();
+}
+
+// ══ PROPERTY PULSE TAB ═══════════════════════════════════════════════════════
+function renderPulse() {
+  const search = document.getElementById('pulse-search').value.toLowerCase();
+  const hood   = document.getElementById('pulse-neighborhood').value;
+  const tier   = document.getElementById('pulse-tier').value;
+
+  let rows = allProperties.filter(p => {
+    if (hood && p.neighborhood !== hood) return false;
+    if (search) {
+      const hay = `${p.address} ${p.owner_first||''} ${p.owner_last||''} ${p.neighborhood||''}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    if (tier) {
+      const ev = latestEvent(p.id);
+      const { score } = computeScore(p, ev?.condition_score || 0);
+      const t = getTier(score, p, ev?.condition_score || 0);
+      if (t !== tier) return false;
+    }
+    return true;
+  });
+
+  // Sort by score desc
+  rows.sort((a, b) => {
+    const ae = latestEvent(a.id), be = latestEvent(b.id);
+    const as_ = computeScore(a, ae?.condition_score||0).score;
+    const bs_ = computeScore(b, be?.condition_score||0).score;
+    return bs_ - as_;
+  });
+
+  const tbody = document.getElementById('pulse-body');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    document.getElementById('pulse-empty').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('pulse-empty').classList.add('hidden');
+
+  tbody.innerHTML = rows.map(p => {
+    const ev = latestEvent(p.id);
+    const { score } = computeScore(p, ev?.condition_score || 0);
+    const t = getTier(score, p, ev?.condition_score || 0);
+    const age = getRoofAge(p);
+    const sc = scoreColor(score);
+    const lastScan = ev ? new Date(ev.scanned_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+    const cards = sendCount(p.id);
+
+    const condStars = ev?.condition_score ? '★'.repeat(ev.condition_score)+'☆'.repeat(5-ev.condition_score) : '—';
+    const condColor = ev?.condition_score >= 4 ? '#dc2626' : ev?.condition_score >= 3 ? '#d97706' : '#22c55e';
+
+    const isSelected = selectedIds.has(p.id);
+    return `<tr class="${isSelected ? 'selected':''}" data-id="${p.id}">
+      <td onclick="event.stopPropagation()"><input type="checkbox" ${isSelected?'checked':''} onchange="toggleSelect('${p.id}',this)"></td>
+      <td onclick="openDetail('${p.id}')" style="cursor:pointer">
+        <div style="font-weight:600;font-size:13px">${p.address}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${p.city}, FL ${p.zip}</div>
+        ${p.hoa_jurisdiction ? '<span class="tag tag-hoa">HOA</span> ' : ''}
+        ${p.has_pool ? '<span class="tag tag-pool">Pool</span> ' : ''}
+        ${p.is_rental === true || p.owner_occupied === false ? '<span class="tag tag-rental">Rental</span>' : ''}
+      </td>
+      <td onclick="openDetail('${p.id}')" style="cursor:pointer">
+        <div style="font-size:13px">${p.owner_first||''} ${p.owner_last||''}</div>
+      </td>
+      <td onclick="openDetail('${p.id}')" style="cursor:pointer;font-size:13px">
+        ${p.assessed_value ? '$'+Math.round(p.assessed_value/1000)+'k' : '—'}
+      </td>
+      <td onclick="openDetail('${p.id}')" style="cursor:pointer;font-size:13px">
+        ${age !== null ? age+'yr' : '—'}
+      </td>
+      <td onclick="openDetail('${p.id}')" style="cursor:pointer">
+        <span style="color:${condColor};font-size:12px;letter-spacing:-1px">${condStars}</span>
+      </td>
+      <td onclick="openDetail('${p.id}')" style="cursor:pointer">
+        <div class="score-wrap">
+          <div class="score-bar"><div class="score-fill" style="width:${score}%;background:${sc}"></div></div>
+          <span class="score-num" style="color:${sc}">${score}</span>
+        </div>
+      </td>
+      <td onclick="openDetail('${p.id}')" style="cursor:pointer">
+        <span class="${tierClass(t)}">${tierLabel(t)}</span>
+      </td>
+      <td style="font-size:12px;color:var(--text-muted)">${lastScan}</td>
+      <td style="font-size:12px">${cards > 0 ? `<strong>${cards}</strong>` : '—'}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="openDetail('${p.id}')">View</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Show/hide bulk action button
+  document.getElementById('btn-add-campaign').style.display = selectedIds.size > 0 ? 'block' : 'none';
+  document.getElementById('sel-count').textContent = selectedIds.size;
+}
+
+function toggleSelect(id, cb) {
+  if (cb.checked) selectedIds.add(id);
+  else selectedIds.delete(id);
+  const row = cb.closest('tr');
+  if (row) row.classList.toggle('selected', cb.checked);
+  document.getElementById('btn-add-campaign').style.display = selectedIds.size > 0 ? 'block' : 'none';
+  document.getElementById('sel-count').textContent = selectedIds.size;
+}
+
+function toggleSelectAll(cb) {
+  document.querySelectorAll('#pulse-body input[type=checkbox]').forEach(box => {
+    box.checked = cb.checked;
+    const id = box.closest('tr')?.dataset.id;
+    if (id) {
+      if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+    }
+    const row = box.closest('tr');
+    if (row) row.classList.toggle('selected', cb.checked);
+  });
+  document.getElementById('btn-add-campaign').style.display = selectedIds.size > 0 ? 'block' : 'none';
+  document.getElementById('sel-count').textContent = selectedIds.size;
+}
+
+// ══ DETAIL PANEL ═════════════════════════════════════════════════════════════
+function openDetail(id) {
+  const p = allProperties.find(x => x.id === id);
+  if (!p) return;
+  const ev = latestEvent(id);
+  const events = allScanEvents.filter(e => e.property_id === id).sort((a,b)=>new Date(b.scanned_at)-new Date(a.scanned_at));
+  const { score, breakdown } = computeScore(p, ev?.condition_score || 0);
+  const t = getTier(score, p, ev?.condition_score || 0);
+  const age = getRoofAge(p);
+  const pitch = ev ? generatePitch(p, ev) : null;
+  const sends = allSends.filter(s => s.property_id === id);
+
+  document.getElementById('dp-tier').textContent = tierLabel(t);
+  document.getElementById('dp-name').textContent = `${p.owner_first||''} ${p.owner_last||''}`.trim() || 'Unknown Owner';
+  document.getElementById('dp-addr').textContent = `${p.address}, ${p.city} FL ${p.zip}`;
+  const hdr = document.getElementById('dp-header');
+  hdr.className = 'detail-header ' + (t === 'insurance_sweet_spot' ? 'sweet' : t);
+
+  let html = '';
+
+  // Score breakdown
+  html += `<div class="detail-section">
+    <h4>Conversion Score</h4>
+    <div class="score-breakdown">
+      ${breakdown.map(b => `<div class="score-breakdown-row"><span>${b.label}</span><span class="pts">+${b.pts}</span></div>`).join('')}
+      <div class="score-total"><span>Total Score</span><span style="color:${scoreColor(score)}">${score}/100</span></div>
+    </div>
+  </div>`;
+
+  // Property details
+  html += `<div class="detail-section">
+    <h4>Property</h4>
+    ${p.assessed_value ? `<div class="detail-row"><label>Assessed Value</label><value>$${p.assessed_value.toLocaleString()}</value></div>` : ''}
+    ${age !== null ? `<div class="detail-row"><label>Roof Age</label><value>~${age} yrs${p.roof_replaced_year ? ' (replaced '+p.roof_replaced_year+')' : ' (original)'}</value></div>` : ''}
+    ${p.living_sqft ? `<div class="detail-row"><label>Living Area</label><value>${p.living_sqft.toLocaleString()} sq ft</value></div>` : ''}
+    ${p.stories ? `<div class="detail-row"><label>Stories</label><value>${p.stories}</value></div>` : ''}
+    <div class="detail-row"><label>Owner-Occupied</label><value>${p.owner_occupied === true ? 'Yes (Homestead)' : p.owner_occupied === false ? 'No (Rental)' : '—'}</value></div>
+    ${p.hoa_jurisdiction ? `<div class="detail-row"><label>HOA Zone</label><value style="color:var(--purple)">Yes — ${p.hoa_name||'HOA'}</value></div>` : ''}
+    ${p.altkey ? `<div class="detail-row"><label>AltKey</label><value><a href="https://www.lakecopropappr.com/search/?alt=${p.altkey}" target="_blank" style="color:var(--blue)">${p.altkey} ↗</a></value></div>` : ''}
+  </div>`;
+
+  // Latest scan
+  if (ev) {
+    html += `<div class="detail-section">
+      <h4>Latest Scan — ${new Date(ev.scanned_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</h4>
+      ${ev.condition_score ? `<div class="detail-row"><label>Condition</label><value>${ev.condition_score}/5 — ${'★'.repeat(ev.condition_score)}</value></div>` : ''}
+      ${ev.worst_slope_direction ? `<div class="detail-row"><label>Worst Slope</label><value>${ev.worst_slope_direction}-facing</value></div>` : ''}
+      ${ev.staining_type ? `<div class="detail-row"><label>Staining</label><value>${ev.staining_type}</value></div>` : ''}
+      ${ev.tree_canopy_notes ? `<div class="detail-row"><label>Tree Canopy</label><value>${ev.tree_canopy_notes}</value></div>` : ''}
+      ${ev.notes ? `<div style="font-size:12px;color:var(--text-muted);margin-top:5px">${ev.notes}</div>` : ''}
+    </div>`;
+  }
+
+  // Generated pitch
+  if (pitch) {
+    html += `<div class="detail-section">
+      <h4>📮 Postcard Pitch (Auto-Generated)</h4>
+      <div class="pitch-box">
+        <div class="pitch-headline">${pitch.headline}</div>
+        <div style="font-size:12px;color:#78350f;line-height:1.6">${pitch.body}</div>
+      </div>
+    </div>`;
+  }
+
+  // Scan history
+  if (events.length) {
+    html += `<div class="detail-section">
+      <h4>Scan Timeline</h4>
+      ${events.map(e => `<div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div>${e.imagery_source} — ${e.imagery_date||''}. Condition: ${e.condition_score || '?'}/5</div>
+          ${e.notes ? `<div style="color:var(--text-muted)">${e.notes}</div>` : ''}
+          <div class="timeline-date">${new Date(e.scanned_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // Postcard history
+  if (sends.length) {
+    html += `<div class="detail-section">
+      <h4>Postcard History</h4>
+      ${sends.map(s => `<div class="timeline-item">
+        <div class="timeline-dot" style="background:${s.booked ? 'var(--green)' : 'var(--orange)'}"></div>
+        <div class="timeline-content">
+          <div>Card ${s.card_number} — ${s.status}${s.booked ? ' ✓ BOOKED' : ''}</div>
+          <div class="timeline-date">${s.send_date||'queued'}</div>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  html += `<div style="display:flex;gap:8px">
+    <button class="btn btn-primary" style="flex:1" onclick="openAddPropertyModal('${id}')">Update Scan</button>
+    <a href="https://gis.lakecountyfl.gov/gisweb/EagleView?address=${encodeURIComponent(p.address+', '+p.city+' FL '+p.zip)}" target="_blank" class="btn btn-secondary" style="flex:1;text-align:center;text-decoration:none">EagleView ↗</a>
+  </div>`;
+
+  document.getElementById('dp-body').innerHTML = html;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+// ══ CAMPAIGNS TAB ════════════════════════════════════════════════════════════
+function renderCampaigns() {
+  const tbody = document.getElementById('camp-body');
+  if (!allCampaigns.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No campaigns yet. Create one to start queueing cards.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allCampaigns.map(c => {
+    const budget = c.budget_cents ? '$'+Math.round(c.budget_cents/100) : '—';
+    const statusColors = { planning:'var(--gray)', ready:'var(--orange)', sent:'var(--green)', complete:'var(--blue)' };
+    const sendDate = c.target_send_date ? new Date(c.target_send_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+    return `<tr>
+      <td><div style="font-weight:600">${c.name}</div><div style="font-size:11px;color:var(--text-muted)">${c.trigger_window||''}</div></td>
+      <td>${sendDate}</td>
+      <td>${c.platform||'—'}</td>
+      <td>${budget}</td>
+      <td>${c.card_count_sent||0}/${c.card_count_target||'—'}</td>
+      <td><span class="tag" style="background:${statusColors[c.status]||'gray'};color:white">${c.status}</span></td>
+      <td><button class="btn btn-secondary btn-sm" onclick="exportCampaignCSV('${c.id}')">Export CSV</button></td>
+    </tr>`;
+  }).join('');
+
+  // Active campaign card
+  const active = allCampaigns.find(c => c.status === 'planning' || c.status === 'ready');
+  const campCard = document.getElementById('active-camp-card');
+  if (active) {
+    const budgetDollars = active.budget_cents ? active.budget_cents/100 : 0;
+    const cardCost = active.cost_per_card_cents ? active.cost_per_card_cents/100 : 0.51;
+    const maxCards = cardCost > 0 ? Math.floor(budgetDollars / cardCost) : 0;
+    const sentPct = active.card_count_target ? Math.round((active.card_count_sent||0)/active.card_count_target*100) : 0;
+    campCard.innerHTML = `<h3>${active.name}</h3>
+      <div class="camp-row"><label>Send Date</label><value>${active.target_send_date ? new Date(active.target_send_date).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '—'}</value></div>
+      <div class="camp-row"><label>Platform</label><value>${active.platform||'—'}</value></div>
+      <div class="camp-row"><label>Budget</label><value>$${budgetDollars} → up to ${maxCards} cards</value></div>
+      <div class="budget-bar-wrap">
+        <div class="budget-label"><span>Cards sent</span><span>${active.card_count_sent||0} / ${active.card_count_target||maxCards}</span></div>
+        <div class="budget-bar"><div class="budget-fill" style="width:${sentPct}%"></div></div>
+      </div>
+      <div class="camp-row"><label>Status</label><value><span class="tag" style="background:var(--orange);color:white">${active.status}</span></value></div>
+      <button class="btn btn-green" style="width:100%;margin-top:10px" onclick="exportCampaignCSV('${active.id}')">📥 Export Click2Mail CSV</button>`;
+  }
+}
+
+// ══ CLICK2MAIL CSV EXPORT ════════════════════════════════════════════════════
+function exportCampaignCSV(campaignId) {
+  // Get properties queued for this campaign (or all high-score props if no sends yet)
+  let candidates = allProperties.filter(p => {
+    const ev = latestEvent(p.id);
+    const { score } = computeScore(p, ev?.condition_score || 0);
+    return score >= 40;
+  });
+  candidates.sort((a,b) => {
+    const ae = latestEvent(a.id), be = latestEvent(b.id);
+    return computeScore(b, be?.condition_score||0).score - computeScore(a, ae?.condition_score||0).score;
+  });
+
+  const rows = [['First Name','Last Name','Company','Address 1','City','State','Zip','Headline','Body Notes']];
+  candidates.forEach(p => {
+    const ev = latestEvent(p.id);
+    const pitch = ev ? generatePitch(p, ev) : { headline:'Your roof needs attention', body:'' };
+    const mailingAddr = p.owner_mailing_address || p.address;
+    const mailingCity = p.owner_mailing_city || p.city;
+    const mailingState = p.owner_mailing_state || 'FL';
+    const mailingZip = p.owner_mailing_zip || p.zip;
+    rows.push([
+      p.owner_first || 'Homeowner',
+      p.owner_last || '',
+      '',
+      mailingAddr,
+      mailingCity || 'Eustis',
+      mailingState || 'FL',
+      mailingZip || '32726',
+      pitch.headline,
+      pitch.body.substring(0, 200)
+    ]);
+  });
+
+  const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `bluelake_postcard_export_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ══ ADD/EDIT PROPERTY MODAL ═══════════════════════════════════════════════════
+function openAddPropertyModal(existingId) {
+  editingPropId = existingId || null;
+  currentRating = 0;
+  document.getElementById('prop-modal-title').textContent = existingId ? 'Update Scan' : 'Log Property Candidate';
+  // Clear form
+  ['pm-addr','pm-altkey','pm-year','pm-roofrep','pm-sqft','pm-value','pm-first','pm-last','pm-mail','pm-trees','pm-notes','pm-imgdate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('rating-label').textContent = 'Click to rate';
+
+  if (existingId) {
+    const p = allProperties.find(x => x.id === existingId);
+    if (p) {
+      document.getElementById('pm-addr').value = p.address || '';
+      document.getElementById('pm-altkey').value = p.altkey || '';
+      document.getElementById('pm-year').value = p.year_built || '';
+      document.getElementById('pm-roofrep').value = p.roof_replaced_year || '';
+      document.getElementById('pm-sqft').value = p.living_sqft || '';
+      document.getElementById('pm-value').value = p.assessed_value || '';
+      document.getElementById('pm-first').value = p.owner_first || '';
+      document.getElementById('pm-last').value = p.owner_last || '';
+      document.getElementById('pm-hood').value = p.neighborhood || 'Blue Lake Estates';
+      document.getElementById('pm-occ').value = p.owner_occupied !== undefined ? String(p.owner_occupied) : '';
+      document.getElementById('pm-pool').value = p.has_pool !== undefined ? String(p.has_pool) : '';
+      document.getElementById('pm-hoa').value = p.hoa_jurisdiction !== undefined ? String(p.hoa_jurisdiction) : '';
+    }
+  }
+  document.getElementById('prop-modal').classList.add('open');
+}
+
+function closePropModal() {
+  document.getElementById('prop-modal').classList.remove('open');
+  editingPropId = null;
+}
+
+function setRating(n) {
+  currentRating = n;
+  document.querySelectorAll('.rating-btn').forEach((b,i) => b.classList.toggle('active', i < n));
+  const labels = ['', 'Clean (1)', 'Light staining (2)', 'Moderate growth (3)', 'Heavy algae (4)', 'Severe / urgent (5)'];
+  document.getElementById('rating-label').textContent = labels[n] || '';
+  updateScorePreview();
+}
+
+function updateScorePreview() {
+  const value = parseInt(document.getElementById('pm-value').value) || 0;
+  const year = parseInt(document.getElementById('pm-year').value) || 0;
+  const occ = document.getElementById('pm-occ').value;
+  const hoa = document.getElementById('pm-hoa').value;
+  const pool = document.getElementById('pm-pool').value;
+  const roofRep = parseInt(document.getElementById('pm-roofrep').value) || 0;
+  if (!currentRating && !value) { document.getElementById('pm-score-preview').style.display='none'; return; }
+  const mockProp = {
+    assessed_value: value, year_built: year,
+    owner_occupied: occ === 'true', homestead_exempt: occ === 'true',
+    hoa_jurisdiction: hoa === 'true', has_pool: pool === 'true',
+    roof_replaced_year: roofRep || null
+  };
+  const { score } = computeScore(mockProp, currentRating);
+  const t = getTier(score, mockProp, currentRating);
+  document.getElementById('pm-score-val').textContent = score + '/100';
+  document.getElementById('pm-score-val').style.color = scoreColor(score);
+  document.getElementById('pm-tier-val').textContent = tierLabel(t);
+  document.getElementById('pm-score-preview').style.display = 'block';
+}
+
+// Listen for value changes to update preview
+['pm-value','pm-year','pm-roofrep','pm-occ','pm-pool','pm-hoa'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', updateScorePreview);
+});
+
+async function saveProperty() {
+  const addr = document.getElementById('pm-addr').value.trim();
+  if (!addr) { alert('Address is required.'); return; }
+
+  const propData = {
+    address: addr,
+    neighborhood: document.getElementById('pm-hood').value,
+    altkey: document.getElementById('pm-altkey').value.trim() || null,
+    year_built: parseInt(document.getElementById('pm-year').value) || null,
+    roof_replaced_year: parseInt(document.getElementById('pm-roofrep').value) || null,
+    living_sqft: parseInt(document.getElementById('pm-sqft').value) || null,
+    assessed_value: parseInt(document.getElementById('pm-value').value) || null,
+    owner_first: document.getElementById('pm-first').value.trim() || null,
+    owner_last: document.getElementById('pm-last').value.trim() || null,
+    owner_mailing_address: document.getElementById('pm-mail').value.trim() || null,
+    owner_occupied: document.getElementById('pm-occ').value === 'true' ? true : document.getElementById('pm-occ').value === 'false' ? false : null,
+    homestead_exempt: document.getElementById('pm-occ').value === 'true',
+    has_pool: document.getElementById('pm-pool').value === 'true',
+    hoa_jurisdiction: document.getElementById('pm-hoa').value === 'true',
+  };
+
+  const scanData = currentRating > 0 ? {
+    scanned_at: new Date().toISOString().slice(0,10),
+    imagery_source: document.getElementById('pm-source').value,
+    imagery_date: document.getElementById('pm-imgdate').value.trim() || null,
+    condition_score: currentRating,
+    worst_slope_direction: document.getElementById('pm-slope').value || null,
+    staining_type: document.getElementById('pm-stain').value || null,
+    tree_canopy_notes: document.getElementById('pm-trees').value.trim() || null,
+    notes: document.getElementById('pm-notes').value.trim() || null,
+    conversion_score: computeScore(propData, currentRating).score,
+    marketing_tier: getTier(computeScore(propData, currentRating).score, propData, currentRating)
+  } : null;
+
+  try {
+    let propId;
+    if (editingPropId) {
+      propId = editingPropId;
+      await sb.from('scan_properties').update(propData).eq('id', editingPropId);
+      const idx = allProperties.findIndex(p => p.id === editingPropId);
+      if (idx >= 0) allProperties[idx] = { ...allProperties[idx], ...propData };
+    } else {
+      const { data, error } = await sb.from('scan_properties').insert(propData).select().single();
+      if (error) throw error;
+      propId = data.id;
+      allProperties.unshift({ ...propData, id: propId });
+    }
+    if (scanData && propId) {
+      const { data: evData } = await sb.from('scan_events').insert({ ...scanData, property_id: propId }).select().single();
+      if (evData) allScanEvents.unshift(evData);
+    }
+  } catch(e) {
+    // Offline / demo mode — add to in-memory only
+    const newId = 'demo_' + Date.now();
+    if (editingPropId) {
+      const idx = allProperties.findIndex(p => p.id === editingPropId);
+      if (idx >= 0) allProperties[idx] = { ...allProperties[idx], ...propData };
+    } else {
+      allProperties.unshift({ ...propData, id: newId });
+    }
+    if (scanData) {
+      allScanEvents.unshift({ ...scanData, id:'ev_'+Date.now(), property_id: editingPropId || newId });
+    }
+  }
+
+  closePropModal();
+  updateStats();
+  populateNeighborhoodFilter();
+  renderPulse();
+  if (editingPropId) openDetail(editingPropId);
+}
+
+// ══ STREET MODAL ═════════════════════════════════════════════════════════════
+function openAddStreetModal() { document.getElementById('street-modal').classList.add('open'); }
+function closeStreetModal()   { document.getElementById('street-modal').classList.remove('open'); }
+
+async function saveStreet() {
+  const hood   = document.getElementById('sm-hood').value.trim();
+  const street = document.getElementById('sm-street').value.trim();
+  if (!hood || !street) { alert('Neighborhood and street name required.'); return; }
+  const data = {
+    neighborhood: hood, street_name: street,
+    status: document.getElementById('sm-status').value,
+    notes: document.getElementById('sm-notes').value.trim() || null
+  };
+  try {
+    const { data:d } = await sb.from('scan_coverage').insert(data).select().single();
+    if (d) allCoverage.push(d);
+  } catch(e) {
+    allCoverage.push({ ...data, id:'demo_'+Date.now(), candidates_found:0 });
+  }
+  closeStreetModal();
+  renderCoverage();
+  updateStats();
+}
+
+// ══ CAMPAIGN MODAL ════════════════════════════════════════════════════════════
+function openNewCampaignModal() {
+  document.getElementById('cm-name').value = '';
+  document.getElementById('cm-budget').value = '';
+  document.getElementById('camp-modal').classList.add('open');
+  prefillCampaignType();
+}
+function closeCampModal() { document.getElementById('camp-modal').classList.remove('open'); }
+
+function prefillCampaignType() {
+  const type = document.getElementById('cm-type').value;
+  const now = new Date();
+  const year = now.getFullYear();
+  const presets = {
+    insurance_pre_season: { name:`September ${year} — Insurance Pre-Season`, window:'October–November insurance renewals', date:`${year}-09-01` },
+    hoa_pre_season:       { name:`January ${year+1} — HOA Spring Pre-Season`,  window:'February–March HOA inspection season', date:`${year+1}-01-15` },
+    storm_burst:          { name:'Post-Storm Emergency Burst', window:'Within 48 hrs of storm event', date:'' },
+    general:              { name:'General Outreach', window:'', date:'' }
+  };
+  const p = presets[type] || {};
+  if (!document.getElementById('cm-name').value) document.getElementById('cm-name').value = p.name || '';
+  if (!document.getElementById('cm-window').value) document.getElementById('cm-window').value = p.window || '';
+  if (!document.getElementById('cm-date').value) document.getElementById('cm-date').value = p.date || '';
+
+  const budget = parseInt(document.getElementById('cm-budget').value) || 0;
+  const maxCards = budget > 0 ? Math.floor(budget / 0.51) : 0;
+  document.getElementById('cm-card-preview').innerHTML = budget > 0
+    ? `Budget of $${budget} → approx <strong>${maxCards} cards</strong> at $0.51/card (Click2Mail). Tip: target your top ${maxCards} scored properties.`
+    : 'Enter a budget to see how many cards you can send.';
+}
+document.getElementById('cm-budget').addEventListener('input', prefillCampaignType);
+
+async function saveCampaign() {
+  const name = document.getElementById('cm-name').value.trim();
+  if (!name) { alert('Campaign name required.'); return; }
+  const budget = parseInt(document.getElementById('cm-budget').value) || 0;
+  const data = {
+    name, campaign_type: document.getElementById('cm-type').value,
+    trigger_window: document.getElementById('cm-window').value.trim() || null,
+    target_send_date: document.getElementById('cm-date').value || null,
+    platform: document.getElementById('cm-platform').value,
+    budget_cents: budget * 100,
+    card_count_target: budget > 0 ? Math.floor(budget / 0.51) : null,
+    status: 'planning'
+  };
+  try {
+    const { data:d } = await sb.from('postcard_campaigns').insert(data).select().single();
+    if (d) allCampaigns.unshift(d);
+  } catch(e) { allCampaigns.unshift({ ...data, id:'demo_'+Date.now() }); }
+  closeCampModal();
+  renderCampaigns();
+  updateStats();
+}
+
+function openCampaignSelectModal() {
+  // Simple: just auto-export selected properties as CSV
+  exportSelectedCSV();
+}
+
+function exportSelectedCSV() {
+  const sel = allProperties.filter(p => selectedIds.has(p.id));
+  if (!sel.length) { alert('Select properties first.'); return; }
+  const rows = [['First Name','Last Name','Address 1','City','State','Zip','Headline','Body Notes','Score']];
+  sel.forEach(p => {
+    const ev = latestEvent(p.id);
+    const { score } = computeScore(p, ev?.condition_score || 0);
+    const pitch = ev ? generatePitch(p, ev) : { headline:'Your roof needs attention', body:'' };
+    rows.push([
+      p.owner_first || 'Homeowner', p.owner_last || '',
+      p.owner_mailing_address || p.address,
+      p.owner_mailing_city || p.city || 'Eustis',
+      'FL', p.owner_mailing_zip || p.zip || '32726',
+      pitch.headline, pitch.body.substring(0,200), score
+    ]);
+  });
+  const csv = rows.map(r => r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `bluelake_selected_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ══ TABS ══════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+    closeDetail();
+  });
+});
+
+// ══ INIT ══════════════════════════════════════════════════════════════════════
+buildCalendar();
+loadAll();
+</script>
+</body>
+</html>
