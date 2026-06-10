@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Lake Services — Annual Maintenance Plans</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; }
+
+  /* ── TABS ── */
+  .tabs { background: white; border-bottom: 2px solid #e2e8f0; display: flex; gap: 0; padding: 0 20px; }
+  .tab { padding: 14px 20px; font-size: 13px; font-weight: 700; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .15s; }
+  .tab.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+  .tab:hover:not(.active) { color: #374151; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── HEADER ── */
+  .header { background: linear-gradient(135deg, #1e3a8a, #1d4ed8); color: white; padding: 18px 28px; }
+  .header h1 { font-size: 20px; font-weight: 800; }
+  .header .sub { font-size: 13px; opacity: 0.78; margin-top: 4px; }
+
+  /* ── PRICING CARDS ── */
+  .pricing-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+
+  .plan-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.08); position: relative; }
+  .plan-card.featured { box-shadow: 0 4px 20px rgba(29,78,216,.22); border: 2px solid #2563eb; }
+  .plan-card.featured::before { content: '⭐ Most Popular'; position: absolute; top: -1px; left: 50%; transform: translateX(-50%); background: #2563eb; color: white; font-size: 10px; font-weight: 800; padding: 3px 14px; border-radius: 0 0 10px 10px; white-space: nowrap; }
+
+  .plan-header { padding: 22px 20px 16px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+  .plan-name { font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+  .plan-tagline { font-size: 11px; color: #64748b; margin-bottom: 14px; }
+  .plan-price { font-size: 36px; font-weight: 900; color: #1d4ed8; line-height: 1; }
+  .plan-price .per { font-size: 14px; font-weight: 500; color: #64748b; }
+  .plan-savings { display: inline-block; background: #dcfce7; color: #166534; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; margin-top: 8px; }
+
+  .plan-body { padding: 16px 20px; }
+  .plan-includes { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .plan-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; font-size: 12px; color: #374151; border-bottom: 1px solid #f8fafc; }
+  .plan-item:last-child { border-bottom: none; }
+  .plan-item .checkmark { color: #16a34a; font-size: 13px; flex-shrink: 0; }
+  .plan-item .dash { color: #cbd5e1; flex-shrink: 0; }
+
+  .plan-cta { padding: 16px 20px 20px; }
+  .cta-btn { display: block; width: 100%; padding: 11px 0; border-radius: 8px; font-size: 14px; font-weight: 800; text-align: center; cursor: pointer; border: none; transition: all .15s; }
+  .cta-primary { background: #1d4ed8; color: white; }
+  .cta-primary:hover { background: #1e40af; }
+  .cta-secondary { background: #f1f5f9; color: #1e293b; }
+  .cta-secondary:hover { background: #e2e8f0; }
+
+  /* ── PITCH SCRIPTS ── */
+  .scripts-container { max-width: 860px; margin: 24px auto; padding: 0 16px 40px; }
+  .script-card { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden; margin-bottom: 20px; }
+  .script-header { padding: 14px 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f1f5f9; }
+  .script-icon { font-size: 22px; }
+  .script-title { font-size: 15px; font-weight: 800; color: #1e293b; }
+  .script-context { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .script-body { padding: 16px 18px; }
+  .script-note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 12px; font-size: 11.5px; color: #713f12; line-height: 1.6; margin-bottom: 14px; }
+  .script-text { background: #f8fafc; border-left: 3px solid #2563eb; border-radius: 0 8px 8px 0; padding: 14px 16px; font-size: 13px; color: #1e293b; line-height: 1.75; }
+  .script-text .stage { display: block; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: .07em; margin: 12px 0 4px; }
+  .script-text .stage:first-child { margin-top: 0; }
+  .script-text strong { color: #1d4ed8; }
+  .script-text em { color: #dc2626; font-style: normal; font-weight: 700; }
+  .script-text .option { display: block; margin: 4px 0; padding-left: 14px; border-left: 2px solid #bfdbfe; color: #374151; }
+  .objection { background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 10px 14px; margin-top: 12px; }
+  .objection .obj-label { font-size: 10px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+  .objection .obj-q { font-size: 12px; color: #1e293b; font-weight: 600; margin-bottom: 5px; }
+  .objection .obj-a { font-size: 12px; color: #374151; line-height: 1.6; }
+
+  /* ── LEAVE-BEHIND ONE-PAGER ── */
+  @page { size: letter portrait; margin: 0.5in; }
+  .leave-behind-wrap { max-width: 860px; margin: 24px auto; padding: 0 16px 40px; }
+  .lb-preview-note { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 16px; font-size: 12px; color: #1e40af; margin-bottom: 14px; }
+  .leave-behind { background: white; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,.1); overflow: hidden; }
+
+  .lb-header { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 22px 28px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .lb-brand { font-size: 24px; font-weight: 900; letter-spacing: -0.03em; }
+  .lb-brand span { color: #93c5fd; }
+  .lb-contact { font-size: 12px; opacity: .85; text-align: right; line-height: 1.8; }
+  .lb-contact strong { font-size: 18px; color: white; display: block; opacity: 1; }
+  .lb-hero { background: #eff6ff; border-bottom: 2px solid #bfdbfe; padding: 14px 28px; text-align: center; }
+  .lb-hero h2 { font-size: 18px; font-weight: 800; color: #1e3a8a; }
+  .lb-hero p { font-size: 12px; color: #3730a3; margin-top: 4px; }
+  .lb-plans { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; padding: 20px 28px; }
+  .lb-plan { border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .lb-plan.featured { border-color: #2563eb; }
+  .lb-plan-head { padding: 12px 14px; text-align: center; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+  .lb-plan.featured .lb-plan-head { background: #eff6ff; border-color: #bfdbfe; }
+  .lb-plan-name { font-size: 14px; font-weight: 800; color: #1e293b; }
+  .lb-plan-price { font-size: 24px; font-weight: 900; color: #1d4ed8; line-height: 1; margin-top: 4px; }
+  .lb-plan-price .per { font-size: 12px; font-weight: 400; color: #64748b; }
+  .lb-plan-body { padding: 10px 14px; }
+  .lb-item { font-size: 11px; color: #374151; padding: 3px 0; display: flex; gap: 6px; }
+  .lb-item .ck { color: #16a34a; }
+  .lb-item .xx { color: #cbd5e1; }
+  .lb-save { text-align: center; margin-top: 6px; }
+  .lb-save span { display: inline-block; background: #dcfce7; color: #166534; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+  .lb-why { padding: 16px 28px; border-top: 1px solid #f1f5f9; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lb-why-item { display: flex; gap: 10px; align-items: flex-start; }
+  .lb-why-icon { font-size: 20px; flex-shrink: 0; }
+  .lb-why-text h4 { font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+  .lb-why-text p { font-size: 11px; color: #64748b; line-height: 1.5; }
+  .lb-footer { background: #1e3a8a; color: white; padding: 10px 28px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; opacity: .85; }
+
+  /* Follow-up templates */
+  .templates-container { max-width: 860px; margin: 0 auto; padding: 0 16px 40px; }
+  .tmpl-card { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-bottom: 16px; overflow: hidden; }
+  .tmpl-header { padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #f1f5f9; display: flex; gap: 10px; align-items: center; }
+  .tmpl-badge { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 10px; }
+  .tmpl-text { padding: 14px 16px; font-size: 13px; color: #374151; line-height: 1.75; background: #fafafa; font-style: italic; }
+  .tmpl-text strong { font-style: normal; color: #1e293b; }
+  .tmpl-text .fill { background: #fef3c7; color: #92400e; padding: 0 4px; border-radius: 3px; font-style: normal; font-weight: 700; font-size: 12px; }
+  .tmpl-note { padding: 10px 16px; font-size: 11px; color: #64748b; border-top: 1px solid #f1f5f9; background: white; }
+
+  .print-btn { position: fixed; top: 16px; right: 16px; background: #1d4ed8; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.2); z-index: 100; }
+  @media print { .print-btn { display: none; } .tabs { display: none; } .panel { display: block !important; } }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨 Print All</button>
+
+<div class="header">
+  <h1>Annual Maintenance Plans — Pricing, Pitch & Templates</h1>
+  <div class="sub">Blue Lake Services · Eustis, FL · Everything you need to sell recurring revenue</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPanel('pricing')">💰 Pricing Tiers</div>
+  <div class="tab" onclick="showPanel('pitch')">🗣 Pitch Scripts</div>
+  <div class="tab" onclick="showPanel('leavebehind')">📄 Leave-Behind</div>
+  <div class="tab" onclick="showPanel('followup')">📱 Follow-Up Templates</div>
+</div>
+
+<!-- ══════════════ PRICING ══════════════ -->
+<div class="panel active" id="panel-pricing">
+  <div class="pricing-grid">
+
+    <!-- BASIC -->
+    <div class="plan-card">
+      <div class="plan-header">
+        <div class="plan-name">Essential</div>
+        <div class="plan-tagline">Keep the algae away, year after year</div>
+        <div class="plan-price">$499<span class="per"> /year</span></div>
+        <div class="plan-savings">Save $75 vs. à la carte</div>
+      </div>
+      <div class="plan-body">
+        <div class="plan-includes">Includes (Annual)</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Roof Soft Wash (up to 2,000 sq ft)</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Driveway/Concrete Surface Clean</div>
+        <div class="plan-item"><span class="checkmark">✓</span> Priority scheduling (book before public)</div>
+        <div class="plan-item"><span class="checkmark">✓</span> Service reminder — we contact you</div>
+        <div class="plan-item"><span class="dash">—</span> <span style="color:#94a3b8">House exterior wash</span></div>
+        <div class="plan-item"><span class="dash">—</span> <span style="color:#94a3b8">Screen enclosure / gutters</span></div>
+      </div>
+      <div class="plan-cta"><button class="cta-btn cta-secondary">Select Essential</button></div>
+    </div>
+
+    <!-- FEATURED -->
+    <div class="plan-card featured">
+      <div class="plan-header">
+        <div class="plan-name">Complete</div>
+        <div class="plan-tagline">Full exterior care — nothing to think about</div>
+        <div class="plan-price">$749<span class="per"> /year</span></div>
+        <div class="plan-savings">Save $150 vs. à la carte</div>
+      </div>
+      <div class="plan-body">
+        <div class="plan-includes">Includes (Annual)</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Roof Soft Wash (up to 3,000 sq ft)</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Full House Exterior Wash</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Driveway / Concrete Surface Clean</div>
+        <div class="plan-item"><span class="checkmark">✓</span> Priority scheduling + reminder</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 10% off any additional services</div>
+        <div class="plan-item"><span class="dash">—</span> <span style="color:#94a3b8">Screen enclosure (add-on available)</span></div>
+      </div>
+      <div class="plan-cta"><button class="cta-btn cta-primary">Select Complete ⭐</button></div>
+    </div>
+
+    <!-- PREMIUM -->
+    <div class="plan-card">
+      <div class="plan-header">
+        <div class="plan-name">Premier</div>
+        <div class="plan-tagline">White-glove care for larger properties</div>
+        <div class="plan-price">$1,099<span class="per"> /year</span></div>
+        <div class="plan-savings">Save $250 vs. à la carte</div>
+      </div>
+      <div class="plan-body">
+        <div class="plan-includes">Includes (Annual)</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Roof Soft Wash (unlimited sq ft)</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Full House Exterior Wash</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Driveway + Walkways Clean</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Screen Enclosure / Lanai Wash</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 1× Gutter Flush</div>
+        <div class="plan-item"><span class="checkmark">✓</span> 15% off additional services + top priority</div>
+      </div>
+      <div class="plan-cta"><button class="cta-btn cta-secondary">Select Premier</button></div>
+    </div>
+
+  </div>
+
+  <!-- Pricing notes -->
+  <div style="max-width:900px; margin: 0 auto 30px; padding: 0 16px;">
+    <div style="background:white; border-radius:10px; padding:16px 20px; box-shadow:0 1px 4px rgba(0,0,0,.07);">
+      <div style="font-size:13px; font-weight:800; color:#1e293b; margin-bottom:10px;">📊 Revenue Math — Why Annual Plans Change Everything</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px;">
+        <div style="text-align:center; background:#f8fafc; border-radius:8px; padding:12px;">
+          <div style="font-size:28px; font-weight:900; color:#1d4ed8;">50</div>
+          <div style="font-size:11px; color:#64748b;">Active plan customers</div>
+        </div>
+        <div style="text-align:center; background:#f8fafc; border-radius:8px; padding:12px;">
+          <div style="font-size:28px; font-weight:900; color:#1d4ed8;">$749</div>
+          <div style="font-size:11px; color:#64748b;">Avg plan value (Complete)</div>
+        </div>
+        <div style="text-align:center; background:#f0fdf4; border-radius:8px; padding:12px; border:1.5px solid #bbf7d0;">
+          <div style="font-size:28px; font-weight:900; color:#166534;">$37,450</div>
+          <div style="font-size:11px; color:#16a34a; font-weight:700;">Guaranteed base revenue</div>
+        </div>
+        <div style="text-align:center; background:#f8fafc; border-radius:8px; padding:12px;">
+          <div style="font-size:28px; font-weight:900; color:#1d4ed8;">+$30k</div>
+          <div style="font-size:11px; color:#64748b;">Estimated add-on upsells</div>
+        </div>
+      </div>
+      <div style="font-size:12px; color:#64748b; margin-top:12px; line-height:1.6;">50 plan customers puts you at <strong style="color:#1e293b;">~$67k</strong> before a single new lead walks in. This is what makes this business your primary income — predictable, schedulable, no chasing.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PITCH SCRIPTS ══════════════ -->
+<div class="panel" id="panel-pitch">
+<div class="scripts-container">
+
+  <div class="script-card">
+    <div class="script-header">
+      <div class="script-icon">🔧</div>
+      <div>
+        <div class="script-title">On-Site Upsell — After Completing a Job</div>
+        <div class="script-context">Use this when you're packing up and the homeowner comes out to look at the results. This is your highest-conversion moment — they're happy, they've seen your work.</div>
+      </div>
+    </div>
+    <div class="script-body">
+      <div class="script-note">⏱ Timing: Start this conversation right when they're admiring the result. They're emotionally engaged — this is not the time to talk price first.</div>
+      <div class="script-text">
+        <span class="stage">Open — compliment, then plant the seed</span>
+        "Looks great, right? The difference is always bigger than people expect. The thing is — with Florida's humidity, you'll see that algae start coming back within 18 to 24 months. It's just how it is down here, especially with all the oak canopy in this neighborhood."
+
+        <span class="stage">Transition — make them feel taken care of</span>
+        "A lot of my customers in <strong>[Blue Lake Estates / Park Place]</strong> just put themselves on my annual plan so they don't have to think about it. I contact them when it's time, they're always first on the schedule, and they save <em>$100–250</em> compared to booking one-off each year."
+
+        <span class="stage">Offer — specific, not vague</span>
+        "For a home like yours — roof plus driveway — we're looking at the <strong>Complete Plan for $749 a year</strong>. That's basically locking in today's price, getting priority scheduling, and making sure this never gets as bad as it was before I showed up."
+
+        <span class="stage">Close — give them a choice, not a yes/no</span>
+        "Do you want to pay annually or would you prefer I split it into two payments of $375?"
+      </div>
+
+      <div class="objection">
+        <div class="obj-label">Common Objection</div>
+        <div class="obj-q">"Let me think about it / I'll call you when I need it."</div>
+        <div class="obj-a">"Totally understand. One thing I'd mention — I'm usually booked 3–4 weeks out in the busy season, and plan customers always get first access. But no pressure — if you want to save the plan info and decide later, I'll leave you this." [Hand them the leave-behind.]</div>
+      </div>
+      <div class="objection" style="margin-top:8px;">
+        <div class="obj-label">Common Objection</div>
+        <div class="obj-q">"I just paid you — I don't want to pay again already."</div>
+        <div class="obj-a">"That's fair — and actually you wouldn't pay anything today. The annual plan kicks in a year from now when it's time for the next clean. You're just locking in the price and the spot."</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="script-card">
+    <div class="script-header">
+      <div class="script-icon">📬</div>
+      <div>
+        <div class="script-title">Phone / Text Pitch — When Someone Calls for a Quote</div>
+        <div class="script-context">Use this when a new lead contacts you. They haven't seen your work yet, so lead with the value before you lead with price.</div>
+      </div>
+    </div>
+    <div class="script-body">
+      <div class="script-text">
+        <span class="stage">Answer the question, then plant the seed</span>
+        "For a house your size — roof soft wash runs about <strong>$X to $X</strong>, driveway's usually around <strong>$X</strong>. Most customers bundle them the same day and save on mobilization.<br><br>
+        One thing worth mentioning — I do have an annual maintenance plan that a lot of Lake County homeowners use. It locks in your pricing, you get priority scheduling, and you save <em>about $100–150 a year</em> compared to booking one-off. I can send you the details when I drop the quote — just let you know the option exists."
+
+        <span class="stage">Get the appointment — don't close the plan on the phone</span>
+        "Let me come take a look and I'll get you exact numbers. What's the address?"
+      </div>
+    </div>
+  </div>
+
+  <div class="script-card">
+    <div class="script-header">
+      <div class="script-icon">🤝</div>
+      <div>
+        <div class="script-title">Referral Ask — After Selling an Annual Plan</div>
+        <div class="script-context">Someone just signed up. They're your happiest customer in this moment. Ask immediately.</div>
+      </div>
+    </div>
+    <div class="script-body">
+      <div class="script-text">
+        "One more thing — I'm currently focused on building up clients in <strong>[Blue Lake Estates / Park Place / this neighborhood]</strong> so I can stay close to home and keep turnaround times tight.<br><br>
+        If you have a neighbor or two whose roof or driveway has been bugging you — or them — I'd love an introduction. I'll give them <em>$50 off their first job</em>, and I'll credit you <em>$50 on your next renewal</em>. Most of my best customers came from one good referral."
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════ LEAVE-BEHIND ══════════════ -->
+<div class="panel" id="panel-leavebehind">
+<div class="leave-behind-wrap">
+  <div class="lb-preview-note">📄 This page is designed to print as a full-page leave-behind. File → Print, or use the Print button. Hand this to the homeowner when you finish a job or deliver a quote.</div>
+  <div class="leave-behind">
+    <div class="lb-header">
+      <div>
+        <div class="lb-brand">Blue Lake <span>Services</span></div>
+        <div style="font-size:12px; opacity:.75; margin-top:4px;">Exterior Cleaning · Eustis, FL · Lake County</div>
+      </div>
+      <div class="lb-contact">
+        <!-- EDIT: Your phone -->
+        <strong>(352) ___-____</strong>
+        bluelakeservices.com<br>
+        Licensed · Insured
+      </div>
+    </div>
+
+    <div class="lb-hero">
+      <h2>Annual Maintenance Plans — Protect Your Home Year-Round</h2>
+      <p>Lock in today's pricing · Priority scheduling · We remind you when it's time · Discounts on add-ons</p>
+    </div>
+
+    <div class="lb-plans">
+      <div class="lb-plan">
+        <div class="lb-plan-head">
+          <div class="lb-plan-name">Essential</div>
+          <div class="lb-plan-price">$499<span class="per">/yr</span></div>
+        </div>
+        <div class="lb-plan-body">
+          <div class="lb-item"><span class="ck">✓</span> Roof Soft Wash (up to 2,000 sq ft)</div>
+          <div class="lb-item"><span class="ck">✓</span> Driveway Surface Clean</div>
+          <div class="lb-item"><span class="ck">✓</span> Priority Scheduling</div>
+          <div class="lb-item"><span class="ck">✓</span> Annual Reminder</div>
+          <div class="lb-item"><span class="xx">—</span> <span style="color:#94a3b8; font-size:11px;">House Wash</span></div>
+          <div class="lb-item"><span class="xx">—</span> <span style="color:#94a3b8; font-size:11px;">Screen Enclosure</span></div>
+        </div>
+        <div class="lb-save"><span>Save ~$75/yr</span></div>
+      </div>
+
+      <div class="lb-plan featured">
+        <div class="lb-plan-head">
+          <div style="font-size:9px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:.06em;">⭐ Most Popular</div>
+          <div class="lb-plan-name">Complete</div>
+          <div class="lb-plan-price">$749<span class="per">/yr</span></div>
+        </div>
+        <div class="lb-plan-body">
+          <div class="lb-item"><span class="ck">✓</span> Roof Soft Wash (up to 3,000 sq ft)</div>
+          <div class="lb-item"><span class="ck">✓</span> Full House Exterior Wash</div>
+          <div class="lb-item"><span class="ck">✓</span> Driveway Surface Clean</div>
+          <div class="lb-item"><span class="ck">✓</span> Priority Scheduling + Reminder</div>
+          <div class="lb-item"><span class="ck">✓</span> 10% Off Add-On Services</div>
+          <div class="lb-item"><span class="xx">—</span> <span style="color:#94a3b8; font-size:11px;">Screen Enclosure (add $150)</span></div>
+        </div>
+        <div class="lb-save"><span>Save ~$150/yr</span></div>
+      </div>
+
+      <div class="lb-plan">
+        <div class="lb-plan-head">
+          <div class="lb-plan-name">Premier</div>
+          <div class="lb-plan-price">$1,099<span class="per">/yr</span></div>
+        </div>
+        <div class="lb-plan-body">
+          <div class="lb-item"><span class="ck">✓</span> Roof Soft Wash (unlimited)</div>
+          <div class="lb-item"><span class="ck">✓</span> Full House Exterior Wash</div>
+          <div class="lb-item"><span class="ck">✓</span> Driveway + Walkways</div>
+          <div class="lb-item"><span class="ck">✓</span> Screen Enclosure / Lanai</div>
+          <div class="lb-item"><span class="ck">✓</span> Gutter Flush</div>
+          <div class="lb-item"><span class="ck">✓</span> 15% Off + Top Priority</div>
+        </div>
+        <div class="lb-save"><span>Save ~$250/yr</span></div>
+      </div>
+    </div>
+
+    <div class="lb-why">
+      <div class="lb-why-item">
+        <div class="lb-why-icon">🛡</div>
+        <div class="lb-why-text">
+          <h4>Protect Your Investment</h4>
+          <p>Algae and mold degrade asphalt shingles and stucco surfaces. Annual soft washing extends roof life by 5–10 years and preserves curb appeal — and home value.</p>
+        </div>
+      </div>
+      <div class="lb-why-item">
+        <div class="lb-why-icon">📅</div>
+        <div class="lb-why-text">
+          <h4>We Remind You — You Don't Have to Remember</h4>
+          <p>Plan members receive a call/text when it's time to schedule. You'll never wonder "did I do this last year?" again.</p>
+        </div>
+      </div>
+      <div class="lb-why-item">
+        <div class="lb-why-icon">🔒</div>
+        <div class="lb-why-text">
+          <h4>Lock In Today's Pricing</h4>
+          <p>Plan pricing is guaranteed at enrollment rates. No surprise increases as long as you stay on the plan.</p>
+        </div>
+      </div>
+      <div class="lb-why-item">
+        <div class="lb-why-icon">👥</div>
+        <div class="lb-why-text">
+          <h4>Refer a Neighbor, Get $50 Off</h4>
+          <p>Send a neighbor our way and we'll credit $50 on your next renewal. They get $50 off their first job too.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lb-footer">
+      <span>Blue Lake Services · Eustis, FL · Lake County</span>
+      <!-- EDIT -->
+      <span>(352) ___-____ · bluelakeservices.com</span>
+      <span>Licensed &amp; Insured</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════ FOLLOW-UP TEMPLATES ══════════════ -->
+<div class="panel" id="panel-followup">
+<div class="templates-container" style="padding-top:20px;">
+
+  <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:12px; color:#1e40af; line-height:1.6;">
+    <strong style="display:block; font-size:13px; margin-bottom:3px;">How to use these templates</strong>
+    All <span style="background:#fef3c7; color:#92400e; padding:0 4px; border-radius:3px; font-weight:700; font-size:11px;">YELLOW FIELDS</span> need to be filled in before sending. Save each as a canned response in your texting app or email so you can send in under 30 seconds.
+  </div>
+
+  <div class="tmpl-card">
+    <div class="tmpl-header">
+      <span class="tmpl-badge" style="background:#dbeafe;color:#1e40af;">📱 Text</span>
+      <strong>Post-Job Review Request</strong>
+      <span style="font-size:11px;color:#64748b;margin-left:auto;">Send within 2 hours of completing job</span>
+    </div>
+    <div class="tmpl-text">Hey <span class="fill">[First Name]</span>! It's Chris from Blue Lake Services. Hope the <span class="fill">[roof/driveway/house]</span> is looking great from the curb! If you're happy with the results, a quick Google review means a ton to a small local business. Here's the direct link: <span class="fill">[YOUR GBP REVIEW LINK]</span> — takes about 30 seconds. Thanks so much!
+    </div>
+    <div class="tmpl-note">🎯 Goal: 1 review per job. This single habit, done consistently, will put you in the Google 3-pack within 90 days.</div>
+  </div>
+
+  <div class="tmpl-card">
+    <div class="tmpl-header">
+      <span class="tmpl-badge" style="background:#dbeafe;color:#1e40af;">📱 Text</span>
+      <strong>Annual Plan Renewal Reminder</strong>
+      <span style="font-size:11px;color:#64748b;margin-left:auto;">Send ~60 days before their anniversary</span>
+    </div>
+    <div class="tmpl-text">Hey <span class="fill">[Name]</span>, it's Chris at Blue Lake Services! It's almost been a year since we cleaned your <span class="fill">[roof/driveway/house]</span> — and with Florida's rainy season, the algae is probably starting to come back. You're on my annual plan so you've got priority access. Want me to get you on the calendar for <span class="fill">[Month]</span>? I can usually be there within a week or two.
+    </div>
+    <div class="tmpl-note">🎯 Goal: Re-book before they even think to shop around. Proactive contact = almost 100% retention.</div>
+  </div>
+
+  <div class="tmpl-card">
+    <div class="tmpl-header">
+      <span class="tmpl-badge" style="background:#dcfce7;color:#166534;">📧 Email</span>
+      <strong>Annual Plan Offer — After Completing First Job</strong>
+      <span style="font-size:11px;color:#64748b;margin-left:auto;">Send same day or next morning</span>
+    </div>
+    <div class="tmpl-text">
+      <strong>Subject: Thanks for having me today — one thing worth knowing</strong><br><br>
+      Hi <span class="fill">[Name]</span>,<br><br>
+      Thanks for the work today — your <span class="fill">[address]</span> looks great and I'm glad we could help.<br><br>
+      I wanted to mention our Annual Maintenance Plan while it's fresh. Most homeowners in Lake County find that algae returns within 18–24 months, especially on shaded roofs and north-facing driveways. The plan means I contact you when it's time, you're always first on the schedule, and you lock in today's pricing:<br><br>
+      • <strong>Essential — $499/yr:</strong> Roof + Driveway<br>
+      • <strong>Complete — $749/yr:</strong> Roof + House + Driveway (most popular)<br>
+      • <strong>Premier — $1,099/yr:</strong> Everything — roof, house, driveway, screen enclosure, gutters<br><br>
+      No commitment beyond the year. If you'd like to lock in a spot just reply to this email or give me a call at <span class="fill">(352) ___-____</span>.<br><br>
+      Also — if any neighbors ask who did your <span class="fill">[roof/driveway]</span>, I'd really appreciate the referral. They'll get $50 off their first job and I'll credit $50 on your next renewal.<br><br>
+      Thanks again,<br>
+      <strong>Chris</strong><br>
+      Blue Lake Services · Eustis, FL<br>
+      <span class="fill">(352) ___-____</span>
+    </div>
+    <div class="tmpl-note">🎯 Goal: Give them the plan in writing after the verbal pitch. Many people want to "think about it" — this gives them something to come back to.</div>
+  </div>
+
+  <div class="tmpl-card">
+    <div class="tmpl-header">
+      <span class="tmpl-badge" style="background:#dbeafe;color:#1e40af;">📱 Text</span>
+      <strong>Referral Thank-You + Credit Notice</strong>
+      <span style="font-size:11px;color:#64748b;margin-left:auto;">Send when a referral books a job</span>
+    </div>
+    <div class="tmpl-text">Hey <span class="fill">[Name]</span>! Just wanted to say thank you — <span class="fill">[Neighbor's first name]</span> just booked with me and mentioned you sent them my way. I've added a $50 credit to your account for the next renewal. Really appreciate it — referrals from good customers mean everything to a small business like mine. 🙏
+    </div>
+    <div class="tmpl-note">🎯 Goal: Reinforce the referral behavior immediately. People who get acknowledged refer again.</div>
+  </div>
+
+  <div class="tmpl-card">
+    <div class="tmpl-header">
+      <span class="tmpl-badge" style="background:#fef3c7;color:#92400e;">🏘 Nextdoor</span>
+      <strong>Nextdoor Post — After Completing a Neighborhood Job</strong>
+      <span style="font-size:11px;color:#64748b;margin-left:auto;">Post same day as job, with permission from homeowner</span>
+    </div>
+    <div class="tmpl-text">Just finished a <span class="fill">[roof soft wash / driveway clean / full exterior]</span> on <span class="fill">[Street Name]</span> today — the before/after is always dramatic with this Florida algae. 😅 [attach photo]<br><br>If anyone in <span class="fill">[Blue Lake Estates / Park Place / your neighborhood]</span> has been putting off their roof or driveway, I'm currently booking in this area and can usually turn around a quote within 24 hours. Happy to give neighbors a discount if I'm already mobilized in the neighborhood.<br><br>— Chris, Blue Lake Services · (352) ___-____ · Fully insured
+    </div>
+    <div class="tmpl-note">🎯 Goal: Ride the "cluster effect" — doing one job in a neighborhood makes the next one 3x easier to book. Post every time.</div>
+  </div>
+
+</div>
+</div>
+
+<script>
+  function showPanel(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
