@@ -415,7 +415,24 @@ tr.selected td { background: #dbeafe; }
         <select id="pm-slope"><option value="">—</option><option>N</option><option>S</option><option>E</option><option>W</option><option>NE</option><option>NW</option><option>SE</option><option>SW</option></select>
       </div>
       <div class="fg"><label>Staining Type</label>
-        <select id="pm-stain"><option value="">—</option><option>Algae (dark green/black)</option><option>Moss</option><option>Lichen</option><option>General darkening</option><option>Mixed</option></select>
+        <select id="pm-stain"><option value="">—</option><option>Algae (dark streaking)</option><option>Moss</option><option>Lichen (gray-green spots)</option><option>Mixed (algae + moss)</option><option>General darkening</option></select>
+      </div>
+    </div>
+    <div class="form-row triple">
+      <div class="fg"><label>Staining Coverage</label>
+        <select id="pm-cov">
+          <option value="">—</option>
+          <option value="<25%">Light (&lt;25%)</option>
+          <option value="25-50%">Moderate (25–50%)</option>
+          <option value="50-75%">Heavy (50–75%)</option>
+          <option value=">75%">Severe (&gt;75%)</option>
+        </select>
+      </div>
+      <div class="fg"><label>Granule Loss?</label>
+        <select id="pm-granule"><option value="">—</option><option value="true">Yes — visible</option><option value="false">No</option></select>
+      </div>
+      <div class="fg"><label>Debris in Valleys?</label>
+        <select id="pm-debris"><option value="">—</option><option value="true">Yes</option><option value="false">No</option></select>
       </div>
     </div>
     <div class="form-row single"><div class="fg"><label>Tree Canopy Notes</label><input id="pm-trees" type="text" placeholder="e.g. Large oak overhang on north side"></div></div>
@@ -519,7 +536,7 @@ function getRoofAge(prop) {
   return null;
 }
 
-function computeScore(prop, conditionScore) {
+function computeScore(prop, conditionScore, scanEvent) {
   let score = 0;
   const breakdown = [];
 
@@ -528,6 +545,26 @@ function computeScore(prop, conditionScore) {
   const condPts = Math.round((cond - 1) * 6.25);
   score += condPts;
   breakdown.push({ label: `Roof condition (${cond}/5)`, pts: condPts });
+
+  // 1b. Staining type modifier — mirrors Cape Analytics carrier weighting
+  // Lichen bonds to shingles, hardest to remove, #1 insurance trigger
+  const stainRaw = (scanEvent?.staining_type || '').toLowerCase();
+  let stainBonus = 0;
+  if (stainRaw.includes('lichen'))     { stainBonus = 8; breakdown.push({ label: 'Lichen (carrier flag — hardest to remove)', pts: 8 }); }
+  else if (stainRaw.includes('moss'))  { stainBonus = 5; breakdown.push({ label: 'Moss growth', pts: 5 }); }
+  else if (stainRaw.includes('mixed')) { stainBonus = 4; breakdown.push({ label: 'Mixed growth (algae + moss)', pts: 4 }); }
+  score += stainBonus;
+
+  // 1c. Staining coverage (0-5 pts)
+  const cov = scanEvent?.staining_coverage_pct || '';
+  let covPts = 0;
+  if (cov === '>75%')      covPts = 5;
+  else if (cov === '50-75%') covPts = 4;
+  else if (cov === '25-50%') covPts = 2;
+  if (covPts > 0) { score += covPts; breakdown.push({ label: `Coverage ${cov} of roof surface`, pts: covPts }); }
+
+  // 1d. Granule loss (+3 pts — accelerates deterioration, major carrier concern)
+  if (scanEvent?.granule_loss) { score += 3; breakdown.push({ label: 'Granule loss visible', pts: 3 }); }
 
   // 2. Assessed value (0-20 pts)
   const val = prop.assessed_value || 0;
@@ -565,10 +602,13 @@ function computeScore(prop, conditionScore) {
   return { score: Math.min(score, 100), breakdown };
 }
 
-function getTier(score, prop, conditionScore) {
+function getTier(score, prop, conditionScore, scanEvent) {
   const age = getRoofAge(prop);
   const val = prop.assessed_value || 0;
-  if (conditionScore >= 4 && age !== null && age >= 10 && age <= 20 && val >= 350000)
+  // Lichen qualifies at condition 3+ (not 4) — it's harder to remove and more reliably triggers carrier flags
+  const hasLichen = (scanEvent?.staining_type || '').toLowerCase().includes('lichen');
+  const condThreshold = hasLichen ? 3 : 4;
+  if (conditionScore >= condThreshold && age !== null && age >= 10 && age <= 20 && val >= 350000)
     return 'insurance_sweet_spot';
   if (score >= 68) return 'hot';
   if (score >= 48) return 'warm';
@@ -590,28 +630,55 @@ function scoreColor(s) {
 }
 
 // ══ PITCH GENERATOR ══════════════════════════════════════════════════════════
+// EXTERNAL CORRESPONDENCE RULE: This copy goes on physical postcards.
+// NEVER reference aerial imagery, scanning systems, GIS, EagleView, or automated detection.
+// All observations must read as if from a physical neighborhood survey/walkthrough.
 function generatePitch(prop, scan) {
-  const name = prop.owner_first ? prop.owner_first : 'Homeowner';
+  const name = prop.owner_first ? prop.owner_first.split(' ')[0] : 'Homeowner';
   const val = prop.assessed_value || 0;
   const age = getRoofAge(prop);
-  const tier = scan ? getTier(computeScore(prop, scan.condition_score).score, prop, scan.condition_score) : 'warm';
+  const hood = prop.neighborhood || 'your neighborhood';
+  const tier = scan ? getTier(computeScore(prop, scan.condition_score, scan).score, prop, scan.condition_score, scan) : 'warm';
 
   const slopeMap = { N:'north-facing', S:'south-facing', E:'east-facing', W:'west-facing',
     NE:'northeast-facing', NW:'northwest-facing', SE:'southeast-facing', SW:'southwest-facing' };
-  const slopeDesc = scan?.worst_slope_direction ? slopeMap[scan.worst_slope_direction] || 'roof' : 'roof';
-  const stain = scan?.staining_type || 'algae growth';
-  const trees = scan?.tree_canopy_notes ? `, likely promoted by ${scan.tree_canopy_notes.toLowerCase()}` : '';
+  const slopeDesc = scan?.worst_slope_direction ? (slopeMap[scan.worst_slope_direction] || '') + ' slope' : 'roof';
+
+  // Physical-observation language for staining type
+  const stainRaw = (scan?.staining_type || '').toLowerCase();
+  let stainDesc = 'algae and organic growth';
+  if (stainRaw.includes('lichen'))     stainDesc = 'lichen and moss growth';
+  else if (stainRaw.includes('moss'))  stainDesc = 'moss and algae growth';
+  else if (stainRaw.includes('mixed')) stainDesc = 'mixed algae and moss growth';
+  else if (stainRaw.includes('algae')) stainDesc = 'algae streaking';
+  else if (stainRaw.includes('dark'))  stainDesc = 'dark organic staining';
+
+  // Coverage intensity adverb
+  const cov = scan?.staining_coverage_pct || '';
+  let covAdj = '';
+  if (cov === '>75%')       covAdj = 'widespread ';
+  else if (cov === '50-75%') covAdj = 'significant ';
+  else if (cov === '25-50%') covAdj = 'moderate ';
+
+  const treesNote = scan?.tree_canopy_notes
+    ? ` — the tree canopy on that side is likely trapping moisture and accelerating the growth`
+    : '';
+
+  const ageNote = age && age > 15
+    ? ` With a roof around ${age} years old, a soft wash now protects the surface and helps avoid premature replacement costs.`
+    : '';
 
   let headline, body;
+
   if (prop.hoa_jurisdiction && tier !== 'cold') {
-    headline = 'Your roof may be heading toward an HOA violation notice';
-    body = `${name}, aerial imagery shows visible ${stain} on the ${slopeDesc} slope of your home at ${prop.address}${trees}. HOA inspections in your neighborhood commonly flag this exact condition. We can soft wash and document it before you receive a notice — keeping your property compliant and your value protected. We're Blue Lake Services, locally owned in Eustis, and we include before/after photo documentation with every job.`;
+    headline = 'Your roof may be heading toward an HOA compliance notice';
+    body = `${name}, while recently surveying homes in ${hood}, your property at ${prop.address} stood out — the ${slopeDesc} has ${covAdj}${stainDesc}${treesNote}. HOA inspectors in your area commonly flag this exact condition before sending violation notices. A professional soft wash removes it completely and we document the before and after if you need it for the board. We're Blue Lake Services, a locally owned family business in Eustis — we'd love to take care of this before it becomes a problem for you.`;
   } else if (val >= 300000 && tier !== 'cold') {
-    headline = 'Florida insurers are flagging roofs like yours for non-renewal';
-    body = `${name}, aerial imagery shows ${stain} on the ${slopeDesc} slope of your roof at ${prop.address}${trees}. Insurance carriers in Florida use the same aerial systems to flag roofs for non-renewal — and this is exactly what they look for. We can soft wash the roof, remove the growth completely, and give you before/after photo documentation to keep on file for your carrier. We're Blue Lake Services, locally owned in Eustis.${age && age > 15 ? ' Given your roof is approximately ' + age + ' years old, acting now protects the warranty and prevents replacement costs.' : ''}`;
+    headline = 'Florida insurers are flagging roofs like yours — here\'s how to stay covered';
+    body = `${name}, we recently surveyed your neighborhood and your home at ${prop.address} caught our attention — the ${slopeDesc} has ${covAdj}${stainDesc}${treesNote}. Insurance carriers across Lake County are actively looking for this condition, and it\'s one of the leading reasons homeowners receive non-renewal notices. A professional soft wash removes the growth completely and we\'ll document it for your carrier. We\'re Blue Lake Services, locally owned in Eustis.${ageNote}`;
   } else {
-    headline = 'Your roof has algae growth that could affect your insurance';
-    body = `${name}, we noticed ${stain} on your roof at ${prop.address}${trees}. This type of growth is what triggers insurance non-renewal notices across Lake County. Our soft wash treatment removes it completely — we're Blue Lake Services, locally owned in Eustis, and we include before/after documentation with every job. We'd love to take care of it for you.`;
+    headline = 'We noticed your roof while working in your neighborhood';
+    body = `${name}, we were recently working in your area and noticed ${covAdj}${stainDesc} on your roof at ${prop.address}${treesNote}. Left untreated, this type of growth spreads and can flag your insurance for non-renewal. Our soft wash treatment removes it completely — we\'re Blue Lake Services, a locally owned family business in Eustis, and we include before/after photo documentation with every job. We\'d love to earn your business.`;
   }
   return { headline, body };
 }
@@ -738,8 +805,8 @@ function updateStats() {
   const hotCount = allProperties.filter(p => {
     const ev = latestEvent(p.id);
     if (!ev) return false;
-    const { score } = computeScore(p, ev.condition_score);
-    const t = getTier(score, p, ev.condition_score);
+    const { score } = computeScore(p, ev.condition_score, ev);
+    const t = getTier(score, p, ev.condition_score, ev);
     return t === 'hot' || t === 'insurance_sweet_spot';
   }).length;
   document.getElementById('hd-hot').textContent = hotCount;
@@ -847,8 +914,8 @@ function renderPulse() {
     }
     if (tier) {
       const ev = latestEvent(p.id);
-      const { score } = computeScore(p, ev?.condition_score || 0);
-      const t = getTier(score, p, ev?.condition_score || 0);
+      const { score } = computeScore(p, ev?.condition_score || 0, ev);
+      const t = getTier(score, p, ev?.condition_score || 0, ev);
       if (t !== tier) return false;
     }
     return true;
@@ -857,8 +924,8 @@ function renderPulse() {
   // Sort by score desc
   rows.sort((a, b) => {
     const ae = latestEvent(a.id), be = latestEvent(b.id);
-    const as_ = computeScore(a, ae?.condition_score||0).score;
-    const bs_ = computeScore(b, be?.condition_score||0).score;
+    const as_ = computeScore(a, ae?.condition_score||0, ae).score;
+    const bs_ = computeScore(b, be?.condition_score||0, be).score;
     return bs_ - as_;
   });
 
@@ -872,8 +939,8 @@ function renderPulse() {
 
   tbody.innerHTML = rows.map(p => {
     const ev = latestEvent(p.id);
-    const { score } = computeScore(p, ev?.condition_score || 0);
-    const t = getTier(score, p, ev?.condition_score || 0);
+    const { score } = computeScore(p, ev?.condition_score || 0, ev);
+    const t = getTier(score, p, ev?.condition_score || 0, ev);
     const age = getRoofAge(p);
     const sc = scoreColor(score);
     const lastScan = ev ? new Date(ev.scanned_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
@@ -955,8 +1022,8 @@ function openDetail(id) {
   if (!p) return;
   const ev = latestEvent(id);
   const events = allScanEvents.filter(e => e.property_id === id).sort((a,b)=>new Date(b.scanned_at)-new Date(a.scanned_at));
-  const { score, breakdown } = computeScore(p, ev?.condition_score || 0);
-  const t = getTier(score, p, ev?.condition_score || 0);
+  const { score, breakdown } = computeScore(p, ev?.condition_score || 0, ev);
+  const t = getTier(score, p, ev?.condition_score || 0, ev);
   const age = getRoofAge(p);
   const pitch = ev ? generatePitch(p, ev) : null;
   const sends = allSends.filter(s => s.property_id === id);
@@ -997,6 +1064,9 @@ function openDetail(id) {
       ${ev.condition_score ? `<div class="detail-row"><label>Condition</label><value>${ev.condition_score}/5 — ${'★'.repeat(ev.condition_score)}</value></div>` : ''}
       ${ev.worst_slope_direction ? `<div class="detail-row"><label>Worst Slope</label><value>${ev.worst_slope_direction}-facing</value></div>` : ''}
       ${ev.staining_type ? `<div class="detail-row"><label>Staining</label><value>${ev.staining_type}</value></div>` : ''}
+      ${ev.staining_coverage_pct ? `<div class="detail-row"><label>Coverage</label><value>${ev.staining_coverage_pct} of visible surface</value></div>` : ''}
+      ${ev.granule_loss ? `<div class="detail-row"><label>Granule Loss</label><value style="color:var(--red)">Yes — elevated carrier risk</value></div>` : ''}
+      ${ev.debris_valleys ? `<div class="detail-row"><label>Valley Debris</label><value>Yes</value></div>` : ''}
       ${ev.tree_canopy_notes ? `<div class="detail-row"><label>Tree Canopy</label><value>${ev.tree_canopy_notes}</value></div>` : ''}
       ${ev.notes ? `<div style="font-size:12px;color:var(--text-muted);margin-top:5px">${ev.notes}</div>` : ''}
     </div>`;
@@ -1103,12 +1173,12 @@ function exportCampaignCSV(campaignId) {
   // Get properties queued for this campaign (or all high-score props if no sends yet)
   let candidates = allProperties.filter(p => {
     const ev = latestEvent(p.id);
-    const { score } = computeScore(p, ev?.condition_score || 0);
+    const { score } = computeScore(p, ev?.condition_score || 0, ev);
     return score >= 40;
   });
   candidates.sort((a,b) => {
     const ae = latestEvent(a.id), be = latestEvent(b.id);
-    return computeScore(b, be?.condition_score||0).score - computeScore(a, ae?.condition_score||0).score;
+    return computeScore(b, be?.condition_score||0, be).score - computeScore(a, ae?.condition_score||0, ae).score;
   });
 
   const rows = [['First Name','Last Name','Company','Address 1','City','State','Zip','Headline','Body Notes']];
@@ -1148,7 +1218,7 @@ function openAddPropertyModal(existingId) {
   currentRating = 0;
   document.getElementById('prop-modal-title').textContent = existingId ? 'Update Scan' : 'Log Property Candidate';
   // Clear form
-  ['pm-addr','pm-altkey','pm-year','pm-roofrep','pm-sqft','pm-value','pm-first','pm-last','pm-mail','pm-trees','pm-notes','pm-imgdate'].forEach(id => {
+  ['pm-addr','pm-altkey','pm-year','pm-roofrep','pm-sqft','pm-value','pm-first','pm-last','pm-mail','pm-trees','pm-notes','pm-imgdate','pm-cov','pm-granule','pm-debris'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1183,7 +1253,7 @@ function closePropModal() {
 function setRating(n) {
   currentRating = n;
   document.querySelectorAll('.rating-btn').forEach((b,i) => b.classList.toggle('active', i < n));
-  const labels = ['', 'Clean (1)', 'Light staining (2)', 'Moderate growth (3)', 'Heavy algae (4)', 'Severe / urgent (5)'];
+  const labels = ['', '1 — Clean, no visible growth', '2 — Light staining, minor algae', '3 — Moderate growth, clearly visible', '4 — Heavy algae / moss coverage', '5 — Severe: lichen present or >75% affected'];
   document.getElementById('rating-label').textContent = labels[n] || '';
   updateScorePreview();
 }
@@ -1244,6 +1314,9 @@ async function saveProperty() {
     condition_score: currentRating,
     worst_slope_direction: document.getElementById('pm-slope').value || null,
     staining_type: document.getElementById('pm-stain').value || null,
+    staining_coverage_pct: document.getElementById('pm-cov').value || null,
+    granule_loss: document.getElementById('pm-granule').value === 'true' ? true : document.getElementById('pm-granule').value === 'false' ? false : null,
+    debris_valleys: document.getElementById('pm-debris').value === 'true' ? true : document.getElementById('pm-debris').value === 'false' ? false : null,
     tree_canopy_notes: document.getElementById('pm-trees').value.trim() || null,
     notes: document.getElementById('pm-notes').value.trim() || null,
     conversion_score: computeScore(propData, currentRating).score,
@@ -1377,7 +1450,7 @@ function exportSelectedCSV() {
   const rows = [['First Name','Last Name','Address 1','City','State','Zip','Headline','Body Notes','Score']];
   sel.forEach(p => {
     const ev = latestEvent(p.id);
-    const { score } = computeScore(p, ev?.condition_score || 0);
+    const { score } = computeScore(p, ev?.condition_score || 0, ev);
     const pitch = ev ? generatePitch(p, ev) : { headline:'Your roof needs attention', body:'' };
     rows.push([
       p.owner_first || 'Homeowner', p.owner_last || '',
