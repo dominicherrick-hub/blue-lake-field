@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Blue Lake Services — Direct Mail Postcard</title>
+<style>
+  /* ── PRINT SETUP: Standard 6x4 postcard (landscape) ── */
+  @page { size: 6in 4in landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #e2e8f0; display: flex; justify-content: center; padding: 30px 20px; gap: 24px; flex-wrap: wrap; }
+
+  /* ── CARD WRAPPER ── */
+  .card-wrap { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .card-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ── POSTCARD BASE ── */
+  .postcard { width: 576px; height: 384px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; position: relative; }
+
+  /* ═══════════════════════════════════════════════
+     FRONT OF CARD
+  ═══════════════════════════════════════════════ */
+  .front { flex-direction: column; }
+
+  .front .top-bar { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 9px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .front .top-bar .brand { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; }
+  .front .top-bar .brand span { color: #93c5fd; }
+  .front .top-bar .tagline { font-size: 10px; opacity: 0.8; text-align: right; line-height: 1.4; }
+
+  .front .body { display: flex; flex: 1; }
+
+  /* Left image pane */
+  .front .image-pane { width: 220px; flex-shrink: 0; background: #0f172a; display: flex; flex-direction: column; }
+  .front .image-pane .img-slot { flex: 1; background: #1e293b; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .front .image-pane .img-slot .placeholder { color: #475569; font-size: 11px; text-align: center; line-height: 1.6; padding: 14px; }
+  .front .image-pane .img-slot img { width: 100%; height: 100%; object-fit: cover; }
+  .img-label { background: rgba(0,0,0,0.7); color: white; font-size: 9px; font-weight: 700; text-align: center; padding: 3px 0; text-transform: uppercase; letter-spacing: .08em; }
+
+  /* Right content pane */
+  .front .content-pane { flex: 1; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; }
+
+  .front .alert-badge { display: inline-block; background: #dc2626; color: white; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+
+  .front .headline { font-size: 17px; font-weight: 800; color: #1e293b; line-height: 1.25; margin-bottom: 8px; }
+  .front .headline .highlight { color: #1d4ed8; }
+
+  .front .address-block { background: #f8fafc; border-left: 3px solid #2563eb; padding: 6px 10px; border-radius: 0 6px 6px 0; margin-bottom: 10px; }
+  .front .address-block .addr-label { font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  .front .address-block .addr-text { font-size: 13px; font-weight: 700; color: #1e293b; }
+
+  .front .findings { font-size: 11px; color: #374151; line-height: 1.55; margin-bottom: 10px; }
+  .front .findings strong { color: #dc2626; }
+
+  .front .cta-section { display: flex; align-items: center; gap: 10px; }
+  .front .cta-btn { background: #1d4ed8; color: white; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none; text-align: center; flex-shrink: 0; }
+  .front .cta-sub { font-size: 10px; color: #64748b; line-height: 1.4; }
+
+  .front .qr-box { width: 58px; height: 58px; border: 1px solid #e2e8f0; border-radius: 6px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
+  .front .qr-box svg { width: 40px; height: 40px; }
+  .front .qr-box .qr-label { font-size: 8px; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+
+  .front .bottom-bar { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 5px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .front .bottom-bar .phone { font-size: 13px; font-weight: 800; color: #1e3a8a; }
+  .front .bottom-bar .web { font-size: 11px; color: #64748b; }
+  .front .bottom-bar .license { font-size: 9px; color: #94a3b8; }
+
+  /* ═══════════════════════════════════════════════
+     BACK OF CARD
+  ═══════════════════════════════════════════════ */
+  .back { flex-direction: row; }
+
+  .back .message-side { flex: 1; padding: 18px 18px 14px; display: flex; flex-direction: column; border-right: 1px solid #e2e8f0; }
+
+  .back .logo-sm { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .back .logo-sm .name { font-size: 14px; font-weight: 800; color: #1e3a8a; }
+  .back .logo-sm .name span { color: #2563eb; }
+  .back .logo-sm .divider { width: 1px; height: 20px; background: #e2e8f0; }
+  .back .logo-sm .slogan { font-size: 10px; color: #64748b; line-height: 1.4; }
+
+  .back .letter { font-size: 11.5px; color: #374151; line-height: 1.65; flex: 1; }
+  .back .letter .salutation { font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+  .back .letter p { margin-bottom: 7px; }
+  .back .letter .emphasis { font-weight: 700; color: #1d4ed8; }
+  .back .letter .offer-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 7px 10px; margin: 8px 0; font-size: 11px; }
+  .back .letter .offer-box .offer-headline { font-weight: 800; color: #1e40af; font-size: 12px; margin-bottom: 3px; }
+  .back .letter .sig { margin-top: 8px; font-size: 11px; color: #475569; }
+  .back .letter .sig strong { color: #1e293b; }
+
+  .back .mail-side { width: 208px; flex-shrink: 0; padding: 16px 14px; display: flex; flex-direction: column; gap: 10px; }
+
+  .back .stamp-area { border: 1.5px dashed #cbd5e1; border-radius: 6px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #94a3b8; font-weight: 600; text-align: center; line-height: 1.4; }
+
+  .back .return-addr { font-size: 10px; color: #475569; line-height: 1.7; }
+  .back .return-addr .ra-name { font-weight: 800; color: #1e3a8a; font-size: 11px; }
+
+  .back .to-addr { margin-top: 8px; }
+  .back .to-addr .to-label { font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .back .to-addr .to-name { font-size: 13px; font-weight: 800; color: #1e293b; }
+  .back .to-addr .to-street { font-size: 12px; color: #374151; margin-top: 2px; }
+  .back .to-addr .to-city { font-size: 12px; color: #374151; }
+
+  .back .services-footer { border-top: 1px solid #f1f5f9; padding-top: 10px; margin-top: auto; }
+  .back .services-footer .sf-label { font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .back .services-footer .sf-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .back .services-footer .sf-tag { background: #eff6ff; color: #1d4ed8; font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 8px; border: 1px solid #bfdbfe; }
+
+  /* ── PRINT BUTTON (screen only) ── */
+  @media screen {
+    .print-controls { position: fixed; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+    .print-btn { background: #1d4ed8; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .print-btn:hover { background: #1e40af; }
+    .instructions { background: white; border-radius: 8px; padding: 14px 16px; max-width: 220px; box-shadow: 0 2px 12px rgba(0,0,0,.12); font-size: 11px; color: #475569; line-height: 1.7; }
+    .instructions h3 { font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+    .instructions code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 10px; }
+  }
+  @media print {
+    body { background: white; padding: 0; display: block; }
+    .card-wrap { display: block; }
+    .card-label { display: none; }
+    .print-controls { display: none; }
+    .postcard { box-shadow: none; border-radius: 0; width: 576px; height: 384px; page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── PRINT CONTROLS ── -->
+<div class="print-controls">
+  <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+  <div class="instructions">
+    <h3>How to use</h3>
+    Edit the <code>EDIT HERE</code> fields below directly in the HTML (or ask Claude to populate from your CRM data).<br><br>
+    <strong>To print:</strong> Click Print above. Set paper to <em>6×4 in</em> or <em>15.24×10.16 cm</em>, landscape. Uncheck headers/footers.<br><br>
+    <strong>To send via Canva/Vistaprint:</strong> Export front and back as PNG (use browser screenshot at 2x zoom), upload as custom design.<br><br>
+    <strong>Print run:</strong> For batches, use <em>PsPrint.com</em>, <em>GotPrint</em>, or <em>USPS Every Door Direct Mail</em> (EDDM) for unaddressed neighborhood drops.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     POSTCARD FRONT
+════════════════════════════════════ -->
+<div class="card-wrap">
+  <div class="card-label">Front of Card</div>
+  <div class="postcard front">
+
+    <!-- Header bar -->
+    <div class="top-bar">
+      <div class="brand">Blue Lake <span>Services</span></div>
+      <div class="tagline">Exterior Cleaning · Eustis, FL<br>Roof · House · Driveway · Surface</div>
+    </div>
+
+    <div class="body">
+      <!-- Image column: before/after or aerial shot -->
+      <div class="image-pane">
+        <div class="img-slot">
+          <!-- EDIT HERE: Replace with actual before photo or aerial screenshot -->
+          <!-- <img src="[PATH_TO_BEFORE_PHOTO_OR_AERIAL]" alt="Property photo"> -->
+          <div class="placeholder">📷 Insert aerial or<br>before photo here<br><br><span style="font-size:9px; opacity:.6">(EagleView screenshot<br>or job before photo)</span></div>
+        </div>
+        <div class="img-label">Your Property — Before Treatment</div>
+        <div class="img-slot" style="height:100px;">
+          <!-- EDIT HERE: Replace with after photo -->
+          <!-- <img src="[PATH_TO_AFTER_PHOTO]" alt="After cleaning"> -->
+          <div class="placeholder" style="font-size:10px;">✨ After photo<br><span style="font-size:9px; opacity:.6">(or remove this pane)</span></div>
+        </div>
+        <div class="img-label" style="background:rgba(22,163,74,0.85);">After — Blue Lake Treatment</div>
+      </div>
+
+      <!-- Content column -->
+      <div class="content-pane">
+        <div>
+          <div class="alert-badge">⚠ Roof Alert</div>
+          <div class="headline">
+            We noticed your<br>
+            <span class="highlight">roof may need attention.</span>
+          </div>
+
+          <!-- EDIT HERE: Populate from CRM -->
+          <div class="address-block">
+            <div class="addr-label">Property Identified</div>
+            <div class="addr-text"><!-- EDIT: e.g. 34436 Tiffany Ln -->34436 Tiffany Ln, Eustis FL</div>
+          </div>
+
+          <!-- EDIT HERE: Tailor findings to the lead's data -->
+          <div class="findings">
+            Our analysis of 2025 aerial imagery shows <strong>significant algae staining</strong> on your roof — a common issue in Lake County's humid climate.<br><br>
+            Left untreated, Gloeocapsa magma algae permanently damages shingles and can void your homeowner's warranty.
+          </div>
+        </div>
+
+        <div class="cta-section">
+          <div>
+            <a class="cta-btn" href="#">Get a Free Quote</a>
+          </div>
+          <!-- EDIT HERE: Replace href with your actual booking link or Google Business Profile URL -->
+          <div class="cta-sub">No pressure. No obligation.<br>Most roofs quoted in under 24 hours.</div>
+          <div class="qr-box">
+            <!-- EDIT HERE: Replace with QR code SVG/img linking to your GBP or booking page -->
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" fill="#1e293b">
+              <rect x="2" y="2" width="14" height="14" rx="1" fill="none" stroke="#1e293b" stroke-width="2"/>
+              <rect x="5" y="5" width="8" height="8"/>
+              <rect x="24" y="2" width="14" height="14" rx="1" fill="none" stroke="#1e293b" stroke-width="2"/>
+              <rect x="27" y="5" width="8" height="8"/>
+              <rect x="2" y="24" width="14" height="14" rx="1" fill="none" stroke="#1e293b" stroke-width="2"/>
+              <rect x="5" y="27" width="8" height="8"/>
+              <rect x="24" y="24" width="4" height="4"/><rect x="30" y="24" width="4" height="4"/>
+              <rect x="24" y="30" width="4" height="4"/><rect x="30" y="30" width="4" height="4"/>
+            </svg>
+            <div class="qr-label">Scan to Book</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <!-- EDIT HERE: Your real phone number and website -->
+      <div class="phone">📞 (352) ___-____</div>
+      <div class="web">bluelakeservices.com</div>
+      <div class="license">Licensed · Insured · Lake County, FL</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     POSTCARD BACK
+════════════════════════════════════ -->
+<div class="card-wrap">
+  <div class="card-label">Back of Card (message + address panel)</div>
+  <div class="postcard back">
+
+    <!-- Left: personal letter -->
+    <div class="message-side">
+      <div class="logo-sm">
+        <div class="name">Blue Lake <span>Services</span></div>
+        <div class="divider"></div>
+        <div class="slogan">Eustis, FL · Exterior Cleaning<br>Roof · House · Driveway</div>
+      </div>
+
+      <div class="letter">
+        <!-- EDIT HERE: Salutation with owner first name if known -->
+        <div class="salutation">Dear William &amp; Maria,</div>
+
+        <p>We specialize in roof soft washing and exterior cleaning for homeowners in Lake County — and we recently identified several properties near yours showing signs of algae buildup from our aerial analysis.</p>
+
+        <p>Your home at <span class="emphasis">34436 Tiffany Ln</span> caught our attention. A <strong>23-year-old roof</strong> with no re-roof permit on record is exactly the kind of situation where a professional soft wash can add years of life — and we've seen neighbors on Tiffany Ln dealing with the same issue.</p>
+
+        <!-- Offer box — EDIT as needed -->
+        <div class="offer-box">
+          <div class="offer-headline">🎁 Neighbor Discount — $50 OFF</div>
+          We're currently working in the Park Place on Lake Joanna area. Mention <strong>"TIFFANY"</strong> when you call or book online and receive $50 off any service over $300.
+        </div>
+
+        <p>No pressure, no sales pitch — just a free quote and an honest assessment of what we see.</p>
+
+        <div class="sig">
+          <strong>— Chris</strong><br>
+          Blue Lake Services &nbsp;·&nbsp; Eustis, FL<br>
+          <!-- EDIT HERE -->
+          (352) ___-____ &nbsp;·&nbsp; bluelakeservices.com
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: address panel -->
+    <div class="mail-side">
+      <div class="stamp-area">PLACE<br>STAMP<br>HERE</div>
+
+      <div class="return-addr">
+        <!-- EDIT HERE: Your return address -->
+        <div class="ra-name">Blue Lake Services</div>
+        Your Address Line 1<br>
+        Eustis, FL 3____
+      </div>
+
+      <div class="to-addr">
+        <div class="to-label">Mail To</div>
+        <!-- EDIT HERE: Recipient from CRM -->
+        <div class="to-name">William &amp; Maria Wright</div>
+        <div class="to-street">34436 Tiffany Ln</div>
+        <div class="to-city">Eustis, FL 32736</div>
+      </div>
+
+      <div class="services-footer">
+        <div class="sf-label">Services Offered</div>
+        <div class="sf-list">
+          <span class="sf-tag">Roof Soft Wash</span>
+          <span class="sf-tag">House Wash</span>
+          <span class="sf-tag">Driveway</span>
+          <span class="sf-tag">Gutters</span>
+          <span class="sf-tag">Screen Enclosures</span>
+          <span class="sf-tag">Driveways</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
