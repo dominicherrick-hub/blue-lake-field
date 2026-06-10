@@ -149,6 +149,22 @@ textarea.inp{resize:none;min-height:80px}
 .visit-notes-text{font-size:13px;color:var(--muted)}
 .hud-show-visits{display:block;text-align:center;padding:10px;font-size:13px;color:var(--blue);font-weight:600;cursor:pointer;border:none;background:none;width:100%}
 
+/* ── PROPERTY INTEL ── */
+.lookup-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 12px;background:#fff;border-top:1px solid var(--gray-lt)}
+.lookup-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:1.5px solid var(--border);border-radius:9px;background:#fff;font-size:10px;font-weight:600;color:var(--text);cursor:pointer;touch-action:manipulation}
+.lookup-btn:active{background:var(--gray-lt)}
+.lookup-btn-icon{font-size:18px;line-height:1}
+.intel-stat{background:var(--gray-lt);border-radius:9px;padding:10px 12px}
+.intel-stat-val{font-size:18px;font-weight:800;color:var(--text)}
+.intel-stat-calc{font-size:11px;font-weight:500;color:var(--blue)}
+.intel-stat-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.intel-sheet-sec{padding:14px 16px;border-bottom:1px solid var(--border)}
+.intel-sheet-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px}
+.survey-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.survey-fresh{background:var(--green-lt);color:var(--green)}
+.survey-stale{background:var(--orange-lt);color:var(--orange)}
+.survey-none{background:var(--gray-lt);color:var(--gray)}
+
 /* ── NEARBY ── */
 .nearby-bar{background:var(--blue);color:#fff;padding:12px 16px}
 .nearby-gps{font-size:13px;opacity:.85;margin-bottom:10px;display:flex;align-items:center;gap:6px}
@@ -346,6 +362,22 @@ textarea.inp{resize:none;min-height:80px}
         <div><div class="field-lbl">Yr Built</div><input class="inp" id="f-year" type="number" placeholder="2005"></div>
         <div><div class="field-lbl">Est. Value</div><input class="inp" id="f-value" placeholder="$350k"></div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div><div class="field-lbl">Stories</div>
+          <select class="inp" id="f-stories-sel">
+            <option value="1">1 Story</option>
+            <option value="2">2 Stories</option>
+            <option value="3">3 Stories</option>
+          </select></div>
+        <div><div class="field-lbl">Roof Pitch</div>
+          <select class="inp" id="f-pitch-sel">
+            <option value="flat">Flat</option>
+            <option value="low">Low (2/12)</option>
+            <option value="medium">Medium (4/12)</option>
+            <option value="steep">Steep (6/12)</option>
+            <option value="vsteep">V.Steep (8/12)</option>
+          </select></div>
+      </div>
       <div class="section-title">Owner</div>
       <div class="field-lbl">Owner Name</div>
       <input class="inp" id="f-owner" placeholder="John & Jane Smith">
@@ -434,6 +466,73 @@ textarea.inp{resize:none;min-height:80px}
       <div style="padding:12px 16px;display:flex;gap:10px">
         <button class="btn btn-outline" style="flex:1" onclick="closeCheckinSheet()">Cancel</button>
         <button class="btn btn-primary" style="flex:2" onclick="saveVisit()">Save Visit ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROPERTY INTEL SHEET -->
+<div class="sheet-overlay" id="intel-sheet">
+  <div class="sheet" style="max-height:95dvh">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Property Intel</div>
+    <div>
+      <div class="intel-sheet-sec">
+        <div class="intel-sheet-title">Measurements</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div><div class="field-lbl">Roof Sq Ft</div><input class="inp" id="if-roof-sqft" type="number" placeholder="auto-calc"></div>
+          <div><div class="field-lbl">Wall Sq Ft</div><input class="inp" id="if-wall-sqft" type="number" placeholder="auto-calc"></div>
+          <div><div class="field-lbl">Gutter Lin Ft</div><input class="inp" id="if-gutter-ft" type="number" placeholder="auto-calc"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <div><div class="field-lbl">Stories</div>
+            <select class="inp" id="if-stories">
+              <option value="1">1 Story</option>
+              <option value="2">2 Stories</option>
+              <option value="3">3 Stories</option>
+            </select></div>
+          <div><div class="field-lbl">Roof Pitch</div>
+            <select class="inp" id="if-pitch">
+              <option value="flat">Flat</option>
+              <option value="low">Low (2/12)</option>
+              <option value="medium">Medium (4/12)</option>
+              <option value="steep">Steep (6/12)</option>
+              <option value="vsteep">V.Steep (8/12)</option>
+            </select></div>
+        </div>
+        <button onclick="applyCalcEstimates()" style="margin-top:8px;width:100%;padding:9px;background:var(--blue-lt);color:var(--blue);border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">↻ Auto-Calculate from House Sq Ft</button>
+      </div>
+      <div class="intel-sheet-sec">
+        <div class="intel-sheet-title">Owner</div>
+        <div class="field-lbl">Full Legal Name (County Records)</div>
+        <input class="inp" id="if-legal-name" placeholder="SMITH JOHN R &amp; JANE M" style="text-transform:uppercase">
+        <div class="field-lbl" style="margin-top:10px">Nickname / Goes By</div>
+        <input class="inp" id="if-nickname" placeholder="Bob, Sue, etc.">
+      </div>
+      <div class="intel-sheet-sec">
+        <div class="intel-sheet-title">Roof History</div>
+        <div class="field-lbl">Year Last Replaced</div>
+        <input class="inp" id="if-roof-replaced" type="number" placeholder="e.g. 2018" min="1970" max="2030">
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Leave blank if unknown — year built is used as a fallback for roof age estimates.</div>
+      </div>
+      <div class="intel-sheet-sec">
+        <div class="intel-sheet-title">Last Survey</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">When was this property last visually assessed? Auto-set to today on each Check-In.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><div class="field-lbl">Date</div><input class="inp" id="if-survey-date" type="date"></div>
+          <div><div class="field-lbl">Source</div>
+            <select class="inp" id="if-survey-source">
+              <option value="Door Knock">Door Knock</option>
+              <option value="Street View">Street View</option>
+              <option value="Satellite">Satellite</option>
+              <option value="Phone Call">Phone Call</option>
+              <option value="In Person">In Person</option>
+            </select></div>
+        </div>
+      </div>
+      <div style="padding:12px 16px;display:flex;gap:10px">
+        <button class="btn btn-outline" style="flex:1" onclick="closeIntelSheet()">Cancel</button>
+        <button class="btn btn-primary" style="flex:2" onclick="saveIntelSheet()">Save All ✓</button>
       </div>
     </div>
   </div>
@@ -712,6 +811,14 @@ async function renderHUD() {
       </div>
     </div>
 
+    <!-- LOOKUP BUTTONS -->
+    <div class="lookup-row">
+      <button class="lookup-btn" onclick="openLookup('county')"><span class="lookup-btn-icon">🏛️</span>County</button>
+      <button class="lookup-btn" onclick="openLookup('streetview')"><span class="lookup-btn-icon">🗺️</span>Street View</button>
+      <button class="lookup-btn" onclick="openLookup('permits')"><span class="lookup-btn-icon">📋</span>Permits</button>
+      <button class="lookup-btn" onclick="showIntelSheet()"><span class="lookup-btn-icon">📐</span>Intel</button>
+    </div>
+
     <!-- STAGE CHANGER -->
     <div class="hud-stage-select">
       <label>Stage:</label>
@@ -739,6 +846,53 @@ async function renderHUD() {
         <div class="hud-stat-lbl">Est. Value</div>
       </div>
     </div>
+
+    <!-- PROPERTY INTEL DISPLAY -->
+    ${(() => {
+      const c2 = calcMeasurements(p.sqft, p.stories || 1, p.roof_pitch || 'medium');
+      const roofSqft = p.roof_sqft;
+      const wallSqft = p.wall_sqft;
+      const gutterFt = p.gutter_ft;
+      const rAge = p.roof_replaced_year ? (YEAR_NOW - p.roof_replaced_year) : null;
+      const svDays = p.last_survey_date ? Math.floor((Date.now() - new Date(p.last_survey_date)) / 86400000) : null;
+      const svLabel = svDays === null ? null
+        : svDays === 0 ? 'Today'
+        : svDays < 7 ? svDays + 'd ago'
+        : svDays < 60 ? Math.floor(svDays/7) + 'wk ago'
+        : Math.floor(svDays/30) + 'mo ago';
+      const svClass = svDays === null ? 'survey-none' : svDays > 180 ? 'survey-stale' : 'survey-fresh';
+      return `<div class="hud-section">
+        <div class="hud-section-title" style="display:flex;align-items:center;justify-content:space-between">
+          Property Intel
+          <button onclick="showIntelSheet()" style="padding:3px 10px;background:var(--blue-lt);color:var(--blue);border:none;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer">✏️ Edit</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+          <div class="intel-stat">
+            <div class="intel-stat-val">${roofSqft ? roofSqft.toLocaleString() : '—'}</div>
+            ${!roofSqft && c2.roofSqft ? `<div class="intel-stat-calc">~${c2.roofSqft.toLocaleString()}</div>` : ''}
+            <div class="intel-stat-lbl">Roof Sq Ft</div>
+          </div>
+          <div class="intel-stat">
+            <div class="intel-stat-val">${wallSqft ? wallSqft.toLocaleString() : '—'}</div>
+            ${!wallSqft && c2.wallSqft ? `<div class="intel-stat-calc">~${c2.wallSqft.toLocaleString()}</div>` : ''}
+            <div class="intel-stat-lbl">Wall Sq Ft</div>
+          </div>
+          <div class="intel-stat">
+            <div class="intel-stat-val">${gutterFt || '—'}</div>
+            ${!gutterFt && c2.gutterFt ? `<div class="intel-stat-calc">~${c2.gutterFt}</div>` : ''}
+            <div class="intel-stat-lbl">Gutter Lin Ft</div>
+          </div>
+        </div>
+        ${p.legal_name ? `<div style="font-size:11px;color:var(--muted)">Legal Name</div><div style="font-size:14px;font-weight:600;margin-bottom:8px;word-break:break-word">${p.legal_name}</div>` : ''}
+        ${p.nickname ? `<div style="display:inline-flex;align-items:center;gap:4px;background:var(--yellow-lt);color:var(--yellow);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:8px">👋 Goes by "${p.nickname}"</div><br>` : ''}
+        ${p.roof_replaced_year ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">Roof Last Replaced</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:${rAge >= 15 ? 'var(--orange)' : 'var(--green)'}">
+            ${p.roof_replaced_year} &nbsp;·&nbsp; ${rAge} yrs ago${rAge >= 15 ? ' ⚠️' : ' ✓'}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
+          <span class="survey-tag ${svClass}">📅 ${svLabel ? svLabel + ' · ' + (p.survey_source || 'Survey') : 'No survey recorded'}</span>
+        </div>
+      </div>`;
+    })()}
 
     <!-- FIELD COACH -->
     ${(() => {
@@ -872,6 +1026,8 @@ function showAddProspect() {
   });
   document.querySelectorAll('#f-stage-row .radio-chip').forEach((c,i) => c.classList.toggle('selected', i===0));
   document.querySelectorAll('#f-services-row .radio-chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('f-stories-sel').value = '1';
+  document.getElementById('f-pitch-sel').value = 'medium';
   document.getElementById('add-sheet').classList.add('show');
 }
 
@@ -891,6 +1047,8 @@ function showEditProspect() {
   document.getElementById('f-score').value = p.score || '';
   document.getElementById('f-next').value = p.next_action || '';
   document.getElementById('f-notes').value = p.notes || '';
+  document.getElementById('f-stories-sel').value = p.stories || '1';
+  document.getElementById('f-pitch-sel').value = p.roof_pitch || 'medium';
   const stage = (p.stage || 'lead').toLowerCase();
   document.querySelectorAll('#f-stage-row .radio-chip').forEach(c => c.classList.toggle('selected', c.textContent.toLowerCase() === stage));
   const svcs = p.services || [];
@@ -925,6 +1083,8 @@ async function saveProspect() {
     services: services.length ? services : null,
     next_action: document.getElementById('f-next').value.trim() || null,
     notes: document.getElementById('f-notes').value.trim() || null,
+    stories:    parseInt(document.getElementById('f-stories-sel').value) || 1,
+    roof_pitch: document.getElementById('f-pitch-sel').value || 'medium',
     source: 'Manual Entry',
     created_by: currentUser?.id
   };
@@ -1147,6 +1307,89 @@ async function loadProfileName() {
   const { data } = await sb.from('profiles').select('full_name').eq('id', currentUser.id).single();
   const name = data?.full_name || currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Team';
   document.getElementById('settings-name').textContent = name;
+}
+
+// ── PROPERTY INTEL ────────────────────────────────────────────────────────────
+function calcMeasurements(sqft, stories, pitch) {
+  if (!sqft) return { roofSqft: null, wallSqft: null, gutterFt: null };
+  const pitchMult = { flat: 1.003, low: 1.014, medium: 1.054, steep: 1.118, vsteep: 1.202 };
+  const m = pitchMult[pitch] || 1.054;
+  const st = Math.max(1, parseInt(stories) || 1);
+  const footprint = sqft / st;
+  const side = Math.sqrt(footprint);
+  const perim = side * 4 * 1.12; // 1.12 for non-rectangular footprint
+  const roofSqft = Math.round(footprint * m * 1.08); // 1.08 for overhangs
+  const wallSqft = Math.round(perim * (st * 9) * 0.82); // 9' per story, 82% for windows/doors
+  const gutterFt = Math.round(perim);
+  return { roofSqft, wallSqft, gutterFt };
+}
+
+function openLookup(type) {
+  const p = currentProspect;
+  if (!p) return;
+  const addr = [p.address, p.city || 'Eustis', 'FL', p.zip || ''].filter(Boolean).join(', ');
+  const enc = encodeURIComponent(addr);
+  const urls = {
+    county:     `https://www.google.com/search?q=${encodeURIComponent(addr + ' property appraiser lake county')}`,
+    streetview: `https://www.google.com/maps/search/?api=1&query=${enc}`,
+    permits:    `https://www.google.com/search?q=${encodeURIComponent(addr + ' roof permit building permit lake county fl')}`,
+  };
+  window.open(urls[type], '_blank');
+}
+
+function showIntelSheet() {
+  const p = currentProspect;
+  if (!p) return;
+  document.getElementById('if-roof-sqft').value   = p.roof_sqft || '';
+  document.getElementById('if-wall-sqft').value   = p.wall_sqft || '';
+  document.getElementById('if-gutter-ft').value   = p.gutter_ft || '';
+  document.getElementById('if-stories').value     = p.stories || '1';
+  document.getElementById('if-pitch').value       = p.roof_pitch || 'medium';
+  document.getElementById('if-legal-name').value  = p.legal_name || '';
+  document.getElementById('if-nickname').value    = p.nickname || '';
+  document.getElementById('if-roof-replaced').value = p.roof_replaced_year || '';
+  document.getElementById('if-survey-date').value = p.last_survey_date ? p.last_survey_date.split('T')[0] : '';
+  document.getElementById('if-survey-source').value = p.survey_source || 'Door Knock';
+  document.getElementById('intel-sheet').classList.add('show');
+}
+
+function closeIntelSheet() { document.getElementById('intel-sheet').classList.remove('show'); }
+
+function applyCalcEstimates() {
+  const p = currentProspect;
+  if (!p?.sqft) { showToast('Enter house sq ft on the prospect first'); return; }
+  const stories = document.getElementById('if-stories').value;
+  const pitch   = document.getElementById('if-pitch').value;
+  const calc = calcMeasurements(p.sqft, stories, pitch);
+  if (calc.roofSqft) document.getElementById('if-roof-sqft').value = calc.roofSqft;
+  if (calc.wallSqft) document.getElementById('if-wall-sqft').value = calc.wallSqft;
+  if (calc.gutterFt) document.getElementById('if-gutter-ft').value = calc.gutterFt;
+  showToast('Estimates filled in ✓');
+}
+
+async function saveIntelSheet() {
+  const p = currentProspect;
+  if (!p) return;
+  const updates = {
+    roof_sqft:          parseInt(document.getElementById('if-roof-sqft').value)    || null,
+    wall_sqft:          parseInt(document.getElementById('if-wall-sqft').value)    || null,
+    gutter_ft:          parseInt(document.getElementById('if-gutter-ft').value)    || null,
+    stories:            parseInt(document.getElementById('if-stories').value)      || 1,
+    roof_pitch:         document.getElementById('if-pitch').value                  || 'medium',
+    legal_name:         document.getElementById('if-legal-name').value.trim()      || null,
+    nickname:           document.getElementById('if-nickname').value.trim()        || null,
+    roof_replaced_year: parseInt(document.getElementById('if-roof-replaced').value) || null,
+    last_survey_date:   document.getElementById('if-survey-date').value            || null,
+    survey_source:      document.getElementById('if-survey-source').value          || null,
+  };
+  const { error } = await sb.from('prospects').update(updates).eq('id', p.id);
+  if (error) { showToast('Error saving: ' + error.message); return; }
+  Object.assign(currentProspect, updates);
+  const idx = prospects.findIndex(q => q.id === p.id);
+  if (idx !== -1) Object.assign(prospects[idx], updates);
+  closeIntelSheet();
+  await renderHUD();
+  showToast('Intel saved ✓');
 }
 
 // ── UTILS ────────────────────────────────────────────────────────────────────
