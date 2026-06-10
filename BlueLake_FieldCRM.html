@@ -471,6 +471,31 @@ textarea.inp{resize:none;min-height:80px}
   </div>
 </div>
 
+<!-- STREET VIEW SHEET -->
+<div class="sheet-overlay" id="sv-sheet">
+  <div class="sheet" style="max-height:95dvh">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sv-sheet-title">Street View</div>
+    <input type="hidden" id="sv-addr-store">
+    <div style="display:flex;gap:6px;padding:0 14px 8px">
+      <button onclick="setSvLayer('c')" id="sv-btn-street" style="flex:1;padding:8px;border:1.5px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🏠 Street</button>
+      <button onclick="setSvLayer('')" id="sv-btn-map"    style="flex:1;padding:8px;border:1.5px solid var(--border);background:#fff;color:var(--text);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🗺️ Map</button>
+      <button onclick="setSvLayer('k')" id="sv-btn-sat"  style="flex:1;padding:8px;border:1.5px solid var(--border);background:#fff;color:var(--text);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🛰️ Satellite</button>
+    </div>
+    <iframe id="sv-frame" src="" style="width:100%;height:48dvh;border:none;display:block" allowfullscreen loading="lazy"></iframe>
+    <div style="padding:12px 16px">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Log this as a visual survey:</div>
+      <div style="display:flex;gap:8px">
+        <input type="date" class="inp" id="sv-date" style="flex:1">
+        <button onclick="saveStreetViewSurvey()" style="padding:10px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Save Survey ✓</button>
+      </div>
+    </div>
+    <div style="padding:0 16px 16px">
+      <button class="btn btn-outline" style="width:100%" onclick="closeSvSheet()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- PROPERTY INTEL SHEET -->
 <div class="sheet-overlay" id="intel-sheet">
   <div class="sheet" style="max-height:95dvh">
@@ -479,6 +504,11 @@ textarea.inp{resize:none;min-height:80px}
     <div>
       <div class="intel-sheet-sec">
         <div class="intel-sheet-title">Measurements</div>
+        <div style="background:var(--blue-lt);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+          <div class="field-lbl" style="color:var(--blue-dk)">House Sq Ft (living area)</div>
+          <input class="inp" id="if-house-sqft" type="number" placeholder="e.g. 2000" style="background:#fff;margin-top:4px">
+          <div style="font-size:11px;color:var(--blue);margin-top:4px">Used for Auto-Calculate below ↓ &nbsp;·&nbsp; Also auto-filled by County lookup</div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           <div><div class="field-lbl">Roof Sq Ft</div><input class="inp" id="if-roof-sqft" type="number" placeholder="auto-calc"></div>
           <div><div class="field-lbl">Wall Sq Ft</div><input class="inp" id="if-wall-sqft" type="number" placeholder="auto-calc"></div>
@@ -813,7 +843,7 @@ async function renderHUD() {
 
     <!-- LOOKUP BUTTONS -->
     <div class="lookup-row">
-      <button class="lookup-btn" onclick="openLookup('county')"><span class="lookup-btn-icon">🏛️</span>County</button>
+      <button class="lookup-btn" id="lookup-county-btn" onclick="openLookup('county')"><span class="lookup-btn-icon">🏛️</span>County</button>
       <button class="lookup-btn" onclick="openLookup('streetview')"><span class="lookup-btn-icon">🗺️</span>Street View</button>
       <button class="lookup-btn" onclick="openLookup('permits')"><span class="lookup-btn-icon">📋</span>Permits</button>
       <button class="lookup-btn" onclick="showIntelSheet()"><span class="lookup-btn-icon">📐</span>Intel</button>
@@ -1294,55 +1324,4 @@ function showScreenRaw(name) {
     const el = document.getElementById('screen-' + s);
     if (el) el.style.display = 'none';
   });
-  document.getElementById('screen-' + name).style.display = 'flex';
-}
-
-function backToList() {
-  showScreenRaw('home');
-  currentProspect = null;
-}
-
-async function loadProfileName() {
-  if (!currentUser) return;
-  const { data } = await sb.from('profiles').select('full_name').eq('id', currentUser.id).single();
-  const name = data?.full_name || currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Team';
-  document.getElementById('settings-name').textContent = name;
-}
-
-// ── PROPERTY INTEL ────────────────────────────────────────────────────────────
-function calcMeasurements(sqft, stories, pitch) {
-  if (!sqft) return { roofSqft: null, wallSqft: null, gutterFt: null };
-  const pitchMult = { flat: 1.003, low: 1.014, medium: 1.054, steep: 1.118, vsteep: 1.202 };
-  const m = pitchMult[pitch] || 1.054;
-  const st = Math.max(1, parseInt(stories) || 1);
-  const footprint = sqft / st;
-  const side = Math.sqrt(footprint);
-  const perim = side * 4 * 1.12; // 1.12 for non-rectangular footprint
-  const roofSqft = Math.round(footprint * m * 1.08); // 1.08 for overhangs
-  const wallSqft = Math.round(perim * (st * 9) * 0.82); // 9' per story, 82% for windows/doors
-  const gutterFt = Math.round(perim);
-  return { roofSqft, wallSqft, gutterFt };
-}
-
-function openLookup(type) {
-  const p = currentProspect;
-  if (!p) return;
-  const addr = [p.address, p.city || 'Eustis', 'FL', p.zip || ''].filter(Boolean).join(', ');
-  const enc = encodeURIComponent(addr);
-  const urls = {
-    county:     `https://www.google.com/search?q=${encodeURIComponent(addr + ' property appraiser lake county')}`,
-    streetview: `https://www.google.com/maps/search/?api=1&query=${enc}`,
-    permits:    `https://www.google.com/search?q=${encodeURIComponent(addr + ' roof permit building permit lake county fl')}`,
-  };
-  window.open(urls[type], '_blank');
-}
-
-function showIntelSheet() {
-  const p = currentProspect;
-  if (!p) return;
-  document.getElementById('if-roof-sqft').value   = p.roof_sqft || '';
-  document.getElementById('if-wall-sqft').value   = p.wall_sqft || '';
-  document.getElementById('if-gutter-ft').value   = p.gutter_ft || '';
-  document.getElementById('if-stories').value     = p.stories || '1';
-  document.getElementById('if-pitch').value       = p.roof_pitch || 'medium';
-  document.g
+  document.getElementById('screen-' + name).style
